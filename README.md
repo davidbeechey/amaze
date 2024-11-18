@@ -131,6 +131,6 @@ If you use `amaze` in research, in addition to citing the [AMF paper](https://ia
   author = {amaze contributors},
   title = {\texttt{amaze}: faster asymmetric message franking},
   year = {2023},
-  url = {https://github.com/sgmenda/amaze},
+  url = {https://github.com/initsecret/amaze},
 }
 ```
