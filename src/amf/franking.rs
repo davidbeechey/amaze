@@ -170,7 +170,7 @@ pub fn verify(
     b1 && b2
 }
 
-pub fn judge(
+pub fn j_judge(
     judge_secret_key: AMFSecretKey,
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
@@ -180,6 +180,33 @@ pub fn judge(
     amf_signature: AMFSignature,
 ) -> bool {
     let b1 = amf_signature.J == judge_secret_key.secret_key * amf_signature.E_J;
+
+    let spok = AMFSPoK::new(
+        sender_public_key.public_key,
+        judge_public_key.public_key,
+        m_public_key.public_key,
+        amf_signature.J,
+        amf_signature.R,
+        amf_signature.M,
+        amf_signature.E_J,
+        amf_signature.E_M,
+    );
+    let b2 = spok.verify(message, amf_signature.pi);
+
+    b1 && b2
+}
+
+/// New function used by the second judge (M) to judge the message
+pub fn m_judge(
+    m_secret_key: AMFSecretKey,
+    sender_public_key: AMFPublicKey,
+    _recipient_public_key: AMFPublicKey,
+    judge_public_key: AMFPublicKey,
+    m_public_key: AMFPublicKey,
+    message: &[u8],
+    amf_signature: AMFSignature,
+) -> bool {
+    let b1 = amf_signature.M == m_secret_key.secret_key * amf_signature.E_M;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -441,7 +468,7 @@ mod tests {
         assert!(verification_result);
 
         // 6. Judge the message (J)
-        let judging_result = judge(
+        let judging_result = j_judge(
             judge_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -450,10 +477,19 @@ mod tests {
             message,
             amf_signature,
         );
+        assert!(judging_result);
 
         // 7. Judge the message (M)
-
-        assert!(judging_result);
+        let m_judging_result = m_judge(
+            _m_secret_key,
+            sender_public_key,
+            recipient_public_key,
+            judge_public_key,
+            m_public_key,
+            message,
+            amf_signature,
+        );
+        assert!(m_judging_result);
     }
 
     #[test]
@@ -487,7 +523,7 @@ mod tests {
         assert!(!verification_result);
 
         // The forged signature should NOT be judged by the judge, as the judge can detect the forgery
-        let judging_result = judge(
+        let judging_result = j_judge(
             judge_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -545,7 +581,7 @@ mod tests {
 
         // The forged signature should NOT be judged by the judge, as the judge can detect the forgery
         // This is what maintains "receiver binding"
-        let judging_result = judge(
+        let judging_result = j_judge(
             judge_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -601,7 +637,7 @@ mod tests {
         assert!(verification_result);
 
         // The forged signature should be judged by the judge
-        let judging_result = judge(
+        let judging_result = j_judge(
             judge_secret_key,
             sender_public_key,
             recipient_public_key,

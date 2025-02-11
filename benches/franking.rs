@@ -1,5 +1,5 @@
 use amaze::amf::{
-    franking::{frank, judge, keygen, verify},
+    franking::{frank, j_judge, keygen, verify},
     AMFRole,
 };
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
@@ -53,7 +53,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     group.bench_function("judging", |b| {
         b.iter(|| {
-            judge(
+            j_judge(
                 black_box(judge_secret_key),
                 black_box(sender_public_key),
                 black_box(recipient_public_key),

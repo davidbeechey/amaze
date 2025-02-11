@@ -55,7 +55,7 @@ let verification_result = amaze::amf::verify(
 assert!(verification_result);
 
 // 6. Judge the message (J)
-let judging_result = amaze::amf::judge(
+let judging_result = amaze::amf::j_judge(
     judge_secret_key,
     sender_public_key,
     recipient_public_key,
@@ -64,10 +64,19 @@ let judging_result = amaze::amf::judge(
     message,
     amf_signature,
 );
+assert!(judging_result);
 
 // 7. Judge the message (M)
-
-assert!(judging_result);
+let m_judging_result = amaze::amf::m_judge(
+    _m_secret_key,
+    sender_public_key,
+    recipient_public_key,
+    judge_public_key,
+    m_public_key,
+    message,
+    amf_signature,
+);
+assert!(m_judging_result);
 ```
 
 ## Usage
