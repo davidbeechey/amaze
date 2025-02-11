@@ -19,16 +19,26 @@ use crate::pok::{
 };
 
 pub type AMFSPoK = FiatShamir<
-    (OrWitness<Scalar, Scalar>, OrWitness<Scalar, Scalar>),
     (
+        OrWitness<Scalar, Scalar>,
+        OrWitness<Scalar, Scalar>,
+        OrWitness<Scalar, Scalar>,
+    ),
+    (
+        // sender_public_key = g^t and J = g^u (cf. Fig 5 of [AMF])
         (RistrettoPoint, RistrettoPoint),
+        // J = judge_public_key^v && E_j = g^v and R = g^w (cf. Fig 5 of [AMF])
         (ChaumPedersenWitnessStatement, RistrettoPoint),
+        // sender_public_key = g^t and M = g^x (cf. Fig 5 of [AMF])
+        (RistrettoPoint, RistrettoPoint),
     ),
     (
         (RistrettoPoint, RistrettoPoint),
         (ChaumPedersenProverCommitment, RistrettoPoint),
+        (RistrettoPoint, RistrettoPoint),
     ),
     (
+        OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
     ),
@@ -38,9 +48,12 @@ impl AMFSPoK {
     pub fn new(
         sender_public_key: RistrettoPoint,
         judge_public_key: RistrettoPoint,
+        m_public_key: RistrettoPoint,
         J: RistrettoPoint,
         R: RistrettoPoint,
+        M: RistrettoPoint,
         E_J: RistrettoPoint,
+        E_M: RistrettoPoint,
     ) -> Self {
         // 0. Initialize Schnorr for the statement sender_public_key = g^t; cf. Fig 5 of [AMF]
         let s0_prover = SchnorrProver::new(sender_public_key);
@@ -91,14 +104,44 @@ impl AMFSPoK {
             s1_verifier: Box::new(s3_verifier),
         };
 
+        // NEW: support a new clause to add a second moderator
+
+        // Initialize Schnorr for the statement sender_public_key = g^t; cf. Fig 5 of [AMF]
+        let s4_prover = SchnorrProver::new(sender_public_key);
+        let s4_verifier = SchnorrVerifier::new(sender_public_key);
+
+        // Initialize Schnorr for the statement M = g^x; cf. Fig 5 of [AMF]
+        let s5_prover = SchnorrProver::new(M);
+        let s5_verifier = SchnorrVerifier::new(M);
+
+        // Combine the Schnorr proofs s4 and s5 into an OR proof or2
+        let or2_prover = OrProver {
+            s0_prover: Box::new(s4_prover),
+            s0_verifier: Box::new(s4_verifier),
+            s1_prover: Box::new(s5_prover),
+            s1_verifier: Box::new(s5_verifier),
+            witness: None,
+            per_verifier_secret: None,
+        };
+        let or2_verifier = OrVerifier {
+            s0_verifier: Box::new(s4_verifier),
+            s1_verifier: Box::new(s5_verifier),
+        };
+
         // 6. Combine the OR proofs or0 and or1 into an AND proof and
+        // let and_prover = AndProver {
+        //     s0_prover: Box::new(or0_prover),
+        //     s1_prover: Box::new(or1_prover),
+        // };
         let and_prover = AndProver {
             s0_prover: Box::new(or0_prover),
             s1_prover: Box::new(or1_prover),
+            s2_prover: Box::new(or2_prover),
         };
         let and_verifier = AndVerifier {
             s0_verifier: Box::new(or0_verifier),
             s1_verifier: Box::new(or1_verifier),
+            s2_verifier: Box::new(or2_verifier),
         };
 
         // 7. Finally, create a Fiat-Shamir Signature Scheme from the AND proof and

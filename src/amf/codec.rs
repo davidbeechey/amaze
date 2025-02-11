@@ -208,8 +208,10 @@ pub struct SerializableAMFInternalSignature {
         SerializableChaumPedersenProverCommitment,
         SerializableRistrettoPoint,
     ),
+    or_prover_commitment_2: (SerializableRistrettoPoint, SerializableRistrettoPoint),
     or_prover_response_0: SerializableOrProverResponse,
     or_prover_response_1: SerializableOrProverResponse,
+    or_prover_response_2: SerializableOrProverResponse,
 }
 impl From<AMFInternalSignature> for SerializableAMFInternalSignature {
     fn from(signature: AMFInternalSignature) -> Self {
@@ -222,8 +224,13 @@ impl From<AMFInternalSignature> for SerializableAMFInternalSignature {
                 signature.prover_commitment.1 .0.into(),
                 signature.prover_commitment.1 .1.into(),
             ),
+            or_prover_commitment_2: (
+                signature.prover_commitment.2 .0.into(),
+                signature.prover_commitment.2 .1.into(),
+            ),
             or_prover_response_0: signature.prover_response.0.into(),
             or_prover_response_1: signature.prover_response.1.into(),
+            or_prover_response_2: signature.prover_response.2.into(),
         }
     }
 }
@@ -239,10 +246,15 @@ impl From<SerializableAMFInternalSignature> for AMFInternalSignature {
                     serialized_signature.or_prover_commitment_1.0.into(),
                     serialized_signature.or_prover_commitment_1.1.into(),
                 ),
+                (
+                    serialized_signature.or_prover_commitment_2.0.into(),
+                    serialized_signature.or_prover_commitment_2.1.into(),
+                ),
             ),
             prover_response: (
                 serialized_signature.or_prover_response_0.into(),
                 serialized_signature.or_prover_response_1.into(),
+                serialized_signature.or_prover_response_2.into(),
             ),
         }
     }
@@ -253,8 +265,10 @@ pub struct SerializableAMFSignature {
     pi: SerializableAMFInternalSignature,
     J: SerializableRistrettoPoint,
     R: SerializableRistrettoPoint,
+    M: SerializableRistrettoPoint,
     E_J: SerializableRistrettoPoint,
     E_R: SerializableRistrettoPoint,
+    E_M: SerializableRistrettoPoint,
 }
 impl From<AMFSignature> for SerializableAMFSignature {
     fn from(amf_signature: AMFSignature) -> Self {
@@ -262,8 +276,10 @@ impl From<AMFSignature> for SerializableAMFSignature {
             pi: amf_signature.pi.into(),
             J: amf_signature.J.into(),
             R: amf_signature.R.into(),
+            M: amf_signature.M.into(),
             E_J: amf_signature.E_J.into(),
             E_R: amf_signature.E_R.into(),
+            E_M: amf_signature.E_M.into(),
         }
     }
 }
@@ -273,8 +289,10 @@ impl From<SerializableAMFSignature> for AMFSignature {
             pi: serialized_amf_signature.pi.into(),
             J: serialized_amf_signature.J.into(),
             R: serialized_amf_signature.R.into(),
+            M: serialized_amf_signature.M.into(),
             E_J: serialized_amf_signature.E_J.into(),
             E_R: serialized_amf_signature.E_R.into(),
+            E_M: serialized_amf_signature.E_M.into(),
         }
     }
 }
@@ -353,6 +371,8 @@ mod tests {
         let (recipient_public_key, _recipient_secret_key) = keygen(AMFRole::Recipient);
         // 2. Initialize a Judge
         let (judge_public_key, _judge_secret_key) = keygen(AMFRole::Judge);
+        // Initialize a second Judge (M)
+        let (m_public_key, _m_secret_key) = keygen(AMFRole::Judge);
 
         // 3. Initialize a message
         let message = b"hello world!";
@@ -363,6 +383,7 @@ mod tests {
             sender_public_key,
             recipient_public_key,
             judge_public_key,
+            m_public_key,
             message,
         );
 

@@ -26,40 +26,47 @@ let (sender_public_key, sender_secret_key) = amaze::amf::keygen(amaze::amf::AMFR
 let (recipient_public_key, recipient_secret_key) = amaze::amf::keygen(amaze::amf::AMFRole::Recipient);
 // 2. Initialize a Judge
 let (judge_public_key, judge_secret_key) = amaze::amf::keygen(amaze::amf::AMFRole::Judge);
+// 3. Initialize a second Judge (M)
+let (m_public_key, _m_secret_key) = amaze::amf::keygen(amaze::amf::AMFRole::Judge);
 
 // 3. Initialize a message
 let message = b"hello world!";
 
-// 4. The sender franks the message
+// 4. Frank the message
 let amf_signature = amaze::amf::frank(
     sender_secret_key,
     sender_public_key,
     recipient_public_key,
     judge_public_key,
+    m_public_key,
     message,
 );
-println!("amf_signature: {:?}", amf_signature);
 
-// 5. The recipient verifies the message to be authentic
+// 5. Verify the message
 let verification_result = amaze::amf::verify(
     recipient_secret_key,
     sender_public_key,
     recipient_public_key,
     judge_public_key,
+    m_public_key,
     message,
     amf_signature,
 );
 assert!(verification_result);
 
-// 6. On report, the judge judges the message to be authentic
+// 6. Judge the message (J)
 let judging_result = amaze::amf::judge(
     judge_secret_key,
     sender_public_key,
     recipient_public_key,
     judge_public_key,
+    m_public_key,
     message,
     amf_signature,
 );
+
+// 7. Judge the message (M)
+
 assert!(judging_result);
 ```
 
