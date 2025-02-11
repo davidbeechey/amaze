@@ -68,9 +68,9 @@ impl AMFSPoK {
         M_1: RistrettoPoint,
         M_2: RistrettoPoint,
         E_J_1: RistrettoPoint,
-        E_J_2: RistrettoPoint,
+        _E_J_2: RistrettoPoint,
         E_M_1: RistrettoPoint,
-        E_M_2: RistrettoPoint,
+        _E_M_2: RistrettoPoint,
     ) -> Self {
         // 0. [FIRST CLAUSE] Initialize Schnorr for the statement sender_public_key = g^t
         let s0_prover = SchnorrProver::new(sender_public_key);
