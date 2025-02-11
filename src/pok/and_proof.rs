@@ -188,6 +188,7 @@ impl<
         buf.extend(self.s0_prover.as_ref().serialize_commitment(&commitment.0));
         buf.extend(self.s1_prover.as_ref().serialize_commitment(&commitment.1));
         buf.extend(self.s2_prover.as_ref().serialize_commitment(&commitment.2));
+        buf.extend(self.s3_prover.as_ref().serialize_commitment(&commitment.3));
         buf
     }
 
@@ -362,7 +363,15 @@ impl<
             random_challenge,
             prover_response_to_challenge.2,
         );
-        s0_verification_result && s1_verification_result && s2_verification_result
+        let s3_verification_result = self.s3_verifier.as_ref().verify_response_to_challenge(
+            prover_commitment.3,
+            random_challenge,
+            prover_response_to_challenge.3,
+        );
+        s0_verification_result
+            && s1_verification_result
+            && s2_verification_result
+            && s3_verification_result
     }
 
     fn simulate_prover_responses(
@@ -431,17 +440,19 @@ mod tests {
         // 1. Initialize Schnorr provers and verifiers with the respective statements to prove
         let s0_prover = SchnorrProver::new(witness0_statement);
         let s1_prover = SchnorrProver::new(witness1_statement);
+        let s2_prover = SchnorrProver::new(witness2_statement);
+        let s3_prover = SchnorrProver::new(witness3_statement);
         let s0_verifier = SchnorrVerifier::new(witness0_statement);
         let s1_verifier = SchnorrVerifier::new(witness1_statement);
-        let s2_prover = SchnorrProver::new(witness2_statement);
         let s2_verifier = SchnorrVerifier::new(witness2_statement);
+        let s3_verifier = SchnorrVerifier::new(witness3_statement);
 
         // 2. Create an AND prover using the two schnorr provers
         let mut and_prover = AndProver {
             s0_prover: Box::new(s0_prover),
             s1_prover: Box::new(s1_prover),
             s2_prover: Box::new(s2_prover),
-            s3_prover: Box::new(s2_prover),
+            s3_prover: Box::new(s3_prover),
         };
 
         // 3. Create an AND verifier using the two schnorr verifiers
@@ -449,7 +460,7 @@ mod tests {
             s0_verifier: Box::new(s0_verifier),
             s1_verifier: Box::new(s1_verifier),
             s2_verifier: Box::new(s2_verifier),
-            s3_verifier: Box::new(s2_verifier),
+            s3_verifier: Box::new(s3_verifier),
         };
 
         // 4. Run tests with the verifier and prover

@@ -54,7 +54,8 @@ impl AMFSPoK {
         judge_public_key: RistrettoPoint,
         m_public_key: RistrettoPoint,
         J: RistrettoPoint,
-        R: RistrettoPoint,
+        R_1: RistrettoPoint,
+        R_2: RistrettoPoint,
         M: RistrettoPoint,
         E_J: RistrettoPoint,
         E_M: RistrettoPoint,
@@ -91,8 +92,8 @@ impl AMFSPoK {
         let s2_verifier = ChaumPedersenVerifier::new(s3_witness_statement);
 
         // 4. Initialize Schnorr for the statement R = g^w; cf. Fig 5 of [AMF]
-        let s3_prover = SchnorrProver::new(R);
-        let s3_verifier = SchnorrVerifier::new(R);
+        let s3_prover = SchnorrProver::new(R_1);
+        let s3_verifier = SchnorrVerifier::new(R_1);
 
         // 5. Combine the Chaum-Pedersen and Schnorr proofs s2 and s3 into an OR proof or1
         let or1_prover = OrProver {
@@ -135,16 +136,16 @@ impl AMFSPoK {
         // NEW: clause for receiver verification that second moderator will judge the message
 
         let s6_witness_statement = ChaumPedersenWitnessStatement {
-            u: judge_public_key,
-            v: E_J,
-            w: J,
+            u: m_public_key,
+            v: E_M,
+            w: M,
         };
         let s6_prover = ChaumPedersenProver::new(s6_witness_statement);
         let s6_verifier = ChaumPedersenVerifier::new(s6_witness_statement);
 
         // 4. Initialize Schnorr for the statement R = g^w; cf. Fig 5 of [AMF]
-        let s7_prover = SchnorrProver::new(R);
-        let s7_verifier = SchnorrVerifier::new(R);
+        let s7_prover = SchnorrProver::new(R_2);
+        let s7_verifier = SchnorrVerifier::new(R_2);
 
         // 5. Combine the Chaum-Pedersen and Schnorr proofs s2 and s3 into an OR proof or1
         let or3_prover = OrProver {
