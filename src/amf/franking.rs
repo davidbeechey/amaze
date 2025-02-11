@@ -45,8 +45,10 @@ pub(crate) type AMFInternalSignature = FiatShamirSignature<
         OrProverCommitment<RistrettoPoint, RistrettoPoint>,
         OrProverCommitment<ChaumPedersenProverCommitment, RistrettoPoint>,
         OrProverCommitment<RistrettoPoint, RistrettoPoint>,
+        OrProverCommitment<ChaumPedersenProverCommitment, RistrettoPoint>,
     ),
     (
+        OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
@@ -125,6 +127,11 @@ pub fn frank(
                 OrWitness {
                     b: false,
                     s0_witness: Some(sender_secret_key.secret_key),
+                    s1_witness: None,
+                },
+                OrWitness {
+                    b: false,
+                    s0_witness: Some(epsilon),
                     s1_witness: None,
                 },
             ),
@@ -275,6 +282,11 @@ pub fn forge(
                     s0_witness: None,
                     s1_witness: Some(eta),
                 },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(epsilon),
+                },
             ),
         },
         message,
@@ -343,6 +355,11 @@ pub fn r_forge(
                     s0_witness: None,
                     s1_witness: Some(eta),
                 },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(epsilon),
+                },
             ),
         },
         message,
@@ -409,6 +426,11 @@ pub fn j_forge(
                     b: true,
                     s0_witness: None,
                     s1_witness: Some(eta),
+                },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(epsilon),
                 },
             ),
         },

@@ -9,22 +9,45 @@ use curve25519_dalek::scalar::Scalar;
 use crate::pok::linear_sigma::{SigmaProver, SigmaVerifier};
 
 /// the secret witness, denoted by (y_0,y_1) in Section 19.7.1 in [BS0.5]
-pub type AndWitness<S0Witness, S1Witness, S2Witness> = (S0Witness, S1Witness, S2Witness);
+pub type AndWitness<S0Witness, S1Witness, S2Witness, S3Witness> =
+    (S0Witness, S1Witness, S2Witness, S3Witness);
 
 /// the statement the witness is used to prove, denoted by (R_0,R_1) in Section 19.7.1 in [BS0.5]
-pub type AndWitnessStatement<S0WitnessStatement, S1WitnessStatement, S2WitnessStatement> =
-    (S0WitnessStatement, S1WitnessStatement, S2WitnessStatement);
+pub type AndWitnessStatement<
+    S0WitnessStatement,
+    S1WitnessStatement,
+    S2WitnessStatement,
+    S3WitnessStatement,
+> = (
+    S0WitnessStatement,
+    S1WitnessStatement,
+    S2WitnessStatement,
+    S3WitnessStatement,
+);
 
 /// the prover's commitment, denoted by (t_0,t_1) in Section 19.7.1 of [BS0.5]
-pub type AndProverCommitment<S0ProverCommitment, S1ProverCommitment, S2ProverCommitment> =
-    (S0ProverCommitment, S1ProverCommitment, S2ProverCommitment);
+pub type AndProverCommitment<
+    S0ProverCommitment,
+    S1ProverCommitment,
+    S2ProverCommitment,
+    S3ProverCommitment,
+> = (
+    S0ProverCommitment,
+    S1ProverCommitment,
+    S2ProverCommitment,
+    S3ProverCommitment,
+);
 
 /// the verifier's challenge, denoted by c in Section 19.7.1 of [BS0.5]
 pub type AndVerifierChallenge = Scalar;
 
 /// the prover's response, denoted by alpha_z in Section 19.7.1 of [BS0.5]
-pub type AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse> =
-    (S0ProverResponse, S1ProverResponse, S2ProverResponse);
+pub type AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse, S3ProverResponse> = (
+    S0ProverResponse,
+    S1ProverResponse,
+    S2ProverResponse,
+    S3ProverResponse,
+);
 
 pub struct AndProver<
     S0Witness,
@@ -39,6 +62,10 @@ pub struct AndProver<
     S2WitnessStatement,
     S2ProverCommitment,
     S2ProverResponse,
+    S3Witness,
+    S3WitnessStatement,
+    S3ProverCommitment,
+    S3ProverResponse,
 > {
     pub s0_prover: Box<
         dyn SigmaProver<
@@ -67,6 +94,15 @@ pub struct AndProver<
             S2ProverResponse,
         >,
     >,
+    pub s3_prover: Box<
+        dyn SigmaProver<
+            S3Witness,
+            S3WitnessStatement,
+            S3ProverCommitment,
+            AndVerifierChallenge,
+            S3ProverResponse,
+        >,
+    >,
 }
 
 impl<
@@ -82,13 +118,27 @@ impl<
         S2WitnessStatement,
         S2ProverCommitment,
         S2ProverResponse,
+        S3Witness,
+        S3WitnessStatement,
+        S3ProverCommitment,
+        S3ProverResponse,
     >
     SigmaProver<
-        AndWitness<S0Witness, S1Witness, S2Witness>,
-        AndWitnessStatement<S0WitnessStatement, S1WitnessStatement, S2WitnessStatement>,
-        AndProverCommitment<S0ProverCommitment, S1ProverCommitment, S2ProverCommitment>,
+        AndWitness<S0Witness, S1Witness, S2Witness, S3Witness>,
+        AndWitnessStatement<
+            S0WitnessStatement,
+            S1WitnessStatement,
+            S2WitnessStatement,
+            S3WitnessStatement,
+        >,
+        AndProverCommitment<
+            S0ProverCommitment,
+            S1ProverCommitment,
+            S2ProverCommitment,
+            S3ProverCommitment,
+        >,
         AndVerifierChallenge,
-        AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse>,
+        AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse, S3ProverResponse>,
     >
     for AndProver<
         S0Witness,
@@ -103,16 +153,26 @@ impl<
         S2WitnessStatement,
         S2ProverCommitment,
         S2ProverResponse,
+        S3Witness,
+        S3WitnessStatement,
+        S3ProverCommitment,
+        S3ProverResponse,
     >
 {
     fn generate_commitment(
         &mut self,
-        witness: AndWitness<S0Witness, S1Witness, S2Witness>,
-    ) -> AndProverCommitment<S0ProverCommitment, S1ProverCommitment, S2ProverCommitment> {
+        witness: AndWitness<S0Witness, S1Witness, S2Witness, S3Witness>,
+    ) -> AndProverCommitment<
+        S0ProverCommitment,
+        S1ProverCommitment,
+        S2ProverCommitment,
+        S3ProverCommitment,
+    > {
         let s0_commitment = self.s0_prover.as_mut().generate_commitment(witness.0);
         let s1_commitment = self.s1_prover.as_mut().generate_commitment(witness.1);
         let s2_commitment = self.s2_prover.as_mut().generate_commitment(witness.2);
-        (s0_commitment, s1_commitment, s2_commitment)
+        let s3_commitment = self.s3_prover.as_mut().generate_commitment(witness.3);
+        (s0_commitment, s1_commitment, s2_commitment, s3_commitment)
     }
 
     fn serialize_commitment(
@@ -121,6 +181,7 @@ impl<
             S0ProverCommitment,
             S1ProverCommitment,
             S2ProverCommitment,
+            S3ProverCommitment,
         >,
     ) -> Vec<u8> {
         let mut buf = Vec::new();
@@ -133,7 +194,8 @@ impl<
     fn generate_response_to_challenge(
         &mut self,
         random_challenge: AndVerifierChallenge,
-    ) -> AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse> {
+    ) -> AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse, S3ProverResponse>
+    {
         let s0_response = self
             .s0_prover
             .as_mut()
@@ -146,7 +208,11 @@ impl<
             .s2_prover
             .as_mut()
             .generate_response_to_challenge(random_challenge);
-        (s0_response, s1_response, s2_response)
+        let s3_response = self
+            .s3_prover
+            .as_mut()
+            .generate_response_to_challenge(random_challenge);
+        (s0_response, s1_response, s2_response, s3_response)
     }
 }
 
@@ -163,6 +229,10 @@ pub struct AndVerifier<
     S2WitnessStatement,
     S2ProverCommitment,
     S2ProverResponse,
+    S3Witness,
+    S3WitnessStatement,
+    S3ProverCommitment,
+    S3ProverResponse,
 > {
     pub s0_verifier: Box<
         dyn SigmaVerifier<
@@ -191,6 +261,15 @@ pub struct AndVerifier<
             S2ProverResponse,
         >,
     >,
+    pub s3_verifier: Box<
+        dyn SigmaVerifier<
+            S3Witness,
+            S3WitnessStatement,
+            S3ProverCommitment,
+            AndVerifierChallenge,
+            S3ProverResponse,
+        >,
+    >,
 }
 
 impl<
@@ -206,13 +285,27 @@ impl<
         S2WitnessStatement,
         S2ProverCommitment,
         S2ProverResponse,
+        S3Witness,
+        S3WitnessStatement,
+        S3ProverCommitment,
+        S3ProverResponse,
     >
     SigmaVerifier<
-        AndWitness<S0Witness, S1Witness, S2Witness>,
-        AndWitnessStatement<S0WitnessStatement, S1WitnessStatement, S2WitnessStatement>,
-        AndProverCommitment<S0ProverCommitment, S1ProverCommitment, S2ProverCommitment>,
+        AndWitness<S0Witness, S1Witness, S2Witness, S3Witness>,
+        AndWitnessStatement<
+            S0WitnessStatement,
+            S1WitnessStatement,
+            S2WitnessStatement,
+            S3WitnessStatement,
+        >,
+        AndProverCommitment<
+            S0ProverCommitment,
+            S1ProverCommitment,
+            S2ProverCommitment,
+            S3ProverCommitment,
+        >,
         AndVerifierChallenge,
-        AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse>,
+        AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse, S3ProverResponse>,
     >
     for AndVerifier<
         S0Witness,
@@ -227,6 +320,10 @@ impl<
         S2WitnessStatement,
         S2ProverCommitment,
         S2ProverResponse,
+        S3Witness,
+        S3WitnessStatement,
+        S3ProverCommitment,
+        S3ProverResponse,
     >
 {
     fn generate_random_challenge(&mut self) -> AndVerifierChallenge {
@@ -240,12 +337,14 @@ impl<
             S0ProverCommitment,
             S1ProverCommitment,
             S2ProverCommitment,
+            S3ProverCommitment,
         >,
         random_challenge: AndVerifierChallenge,
         prover_response_to_challenge: AndProverResponse<
             S0ProverResponse,
             S1ProverResponse,
             S2ProverResponse,
+            S3ProverResponse,
         >,
     ) -> bool {
         let s0_verification_result = self.s0_verifier.as_ref().verify_response_to_challenge(
@@ -270,8 +369,13 @@ impl<
         &self,
         random_challenge: AndVerifierChallenge,
     ) -> (
-        AndProverCommitment<S0ProverCommitment, S1ProverCommitment, S2ProverCommitment>,
-        AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse>,
+        AndProverCommitment<
+            S0ProverCommitment,
+            S1ProverCommitment,
+            S2ProverCommitment,
+            S3ProverCommitment,
+        >,
+        AndProverResponse<S0ProverResponse, S1ProverResponse, S2ProverResponse, S3ProverResponse>,
     ) {
         let (s0_commitment, s0_response) = self
             .s0_verifier
@@ -285,9 +389,13 @@ impl<
             .s2_verifier
             .as_ref()
             .simulate_prover_responses(random_challenge);
+        let (s3_commitment, s3_response) = self
+            .s3_verifier
+            .as_ref()
+            .simulate_prover_responses(random_challenge);
         (
-            (s0_commitment, s1_commitment, s2_commitment),
-            (s0_response, s1_response, s2_response),
+            (s0_commitment, s1_commitment, s2_commitment, s3_commitment),
+            (s0_response, s1_response, s2_response, s3_response),
         )
     }
 }
@@ -317,6 +425,8 @@ mod tests {
         let witness1_statement = witness1 * g;
         let witness2 = Scalar::random(&mut rng);
         let witness2_statement = witness2 * g;
+        let witness3 = Scalar::random(&mut rng);
+        let witness3_statement = witness3 * g;
 
         // 1. Initialize Schnorr provers and verifiers with the respective statements to prove
         let s0_prover = SchnorrProver::new(witness0_statement);
@@ -331,6 +441,7 @@ mod tests {
             s0_prover: Box::new(s0_prover),
             s1_prover: Box::new(s1_prover),
             s2_prover: Box::new(s2_prover),
+            s3_prover: Box::new(s2_prover),
         };
 
         // 3. Create an AND verifier using the two schnorr verifiers
@@ -338,9 +449,14 @@ mod tests {
             s0_verifier: Box::new(s0_verifier),
             s1_verifier: Box::new(s1_verifier),
             s2_verifier: Box::new(s2_verifier),
+            s3_verifier: Box::new(s2_verifier),
         };
 
         // 4. Run tests with the verifier and prover
-        test_sigma_protocol!((witness0, witness1, witness2), and_verifier, and_prover);
+        test_sigma_protocol!(
+            (witness0, witness1, witness2, witness3),
+            and_verifier,
+            and_prover
+        );
     }
 }

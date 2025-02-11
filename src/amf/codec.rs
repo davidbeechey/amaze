@@ -209,9 +209,14 @@ pub struct SerializableAMFInternalSignature {
         SerializableRistrettoPoint,
     ),
     or_prover_commitment_2: (SerializableRistrettoPoint, SerializableRistrettoPoint),
+    or_prover_commitment_3: (
+        SerializableChaumPedersenProverCommitment,
+        SerializableRistrettoPoint,
+    ),
     or_prover_response_0: SerializableOrProverResponse,
     or_prover_response_1: SerializableOrProverResponse,
     or_prover_response_2: SerializableOrProverResponse,
+    or_prover_response_3: SerializableOrProverResponse,
 }
 impl From<AMFInternalSignature> for SerializableAMFInternalSignature {
     fn from(signature: AMFInternalSignature) -> Self {
@@ -228,9 +233,14 @@ impl From<AMFInternalSignature> for SerializableAMFInternalSignature {
                 signature.prover_commitment.2 .0.into(),
                 signature.prover_commitment.2 .1.into(),
             ),
+            or_prover_commitment_3: (
+                signature.prover_commitment.3 .0.into(),
+                signature.prover_commitment.3 .1.into(),
+            ),
             or_prover_response_0: signature.prover_response.0.into(),
             or_prover_response_1: signature.prover_response.1.into(),
             or_prover_response_2: signature.prover_response.2.into(),
+            or_prover_response_3: signature.prover_response.3.into(),
         }
     }
 }
@@ -250,11 +260,16 @@ impl From<SerializableAMFInternalSignature> for AMFInternalSignature {
                     serialized_signature.or_prover_commitment_2.0.into(),
                     serialized_signature.or_prover_commitment_2.1.into(),
                 ),
+                (
+                    serialized_signature.or_prover_commitment_3.0.into(),
+                    serialized_signature.or_prover_commitment_3.1.into(),
+                ),
             ),
             prover_response: (
                 serialized_signature.or_prover_response_0.into(),
                 serialized_signature.or_prover_response_1.into(),
                 serialized_signature.or_prover_response_2.into(),
+                serialized_signature.or_prover_response_3.into(),
             ),
         }
     }
