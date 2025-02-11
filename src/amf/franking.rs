@@ -46,8 +46,12 @@ pub(crate) type AMFInternalSignature = FiatShamirSignature<
         OrProverCommitment<ChaumPedersenProverCommitment, RistrettoPoint>,
         OrProverCommitment<RistrettoPoint, RistrettoPoint>,
         OrProverCommitment<ChaumPedersenProverCommitment, RistrettoPoint>,
+        OrProverCommitment<ChaumPedersenProverCommitment, RistrettoPoint>,
+        OrProverCommitment<ChaumPedersenProverCommitment, RistrettoPoint>,
     ),
     (
+        OrProverResponse<Scalar, Scalar>,
+        OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
@@ -59,14 +63,18 @@ pub(crate) type AMFInternalSignature = FiatShamirSignature<
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct AMFSignature {
     pub pi: AMFInternalSignature,
-    pub J: RistrettoPoint,
+    pub J_1: RistrettoPoint,
+    pub J_2: RistrettoPoint,
     pub R_1: RistrettoPoint,
     pub R_2: RistrettoPoint,
-    pub M: RistrettoPoint,
-    pub E_J: RistrettoPoint,
+    pub M_1: RistrettoPoint,
+    pub M_2: RistrettoPoint,
+    pub E_J_1: RistrettoPoint,
+    pub E_J_2: RistrettoPoint,
     pub E_R_1: RistrettoPoint,
     pub E_R_2: RistrettoPoint,
-    pub E_M: RistrettoPoint,
+    pub E_M_1: RistrettoPoint,
+    pub E_M_2: RistrettoPoint,
 }
 
 pub fn keygen(role: AMFRole) -> (AMFPublicKey, AMFSecretKey) {
@@ -92,30 +100,41 @@ pub fn frank(
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
+
     let alpha = Scalar::random(&mut rng);
     let beta = Scalar::random(&mut rng);
     let epsilon = Scalar::random(&mut rng);
     let zeta = Scalar::random(&mut rng);
+    let iota = Scalar::random(&mut rng);
+    let kappa = Scalar::random(&mut rng);
 
-    let J = alpha * judge_public_key.public_key;
+    let J_1 = alpha * judge_public_key.public_key;
+    let J_2 = iota * judge_public_key.public_key;
     let R_1 = beta * recipient_public_key.public_key;
     let R_2 = zeta * recipient_public_key.public_key;
-    let M = epsilon * m_public_key.public_key;
-    let E_J = alpha * g;
+    let M_1 = epsilon * m_public_key.public_key;
+    let M_2 = kappa * m_public_key.public_key;
+    let E_J_1 = alpha * g;
+    let E_J_2 = iota * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M = epsilon * g;
+    let E_M_1 = epsilon * g;
+    let E_M_2 = kappa * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
-        E_M,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
+        E_M_1,
+        E_M_2,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -140,20 +159,34 @@ pub fn frank(
                     s0_witness: Some(epsilon),
                     s1_witness: None,
                 },
+                OrWitness {
+                    b: false,
+                    s0_witness: Some(epsilon),
+                    s1_witness: None,
+                },
+                OrWitness {
+                    b: false,
+                    s0_witness: Some(alpha),
+                    s1_witness: None,
+                },
             ),
         },
         message,
     );
     AMFSignature {
         pi,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
         E_R_1,
         E_R_2,
-        E_M,
+        E_M_1,
+        E_M_2,
     }
 }
 
@@ -166,19 +199,25 @@ pub fn verify(
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
+    // b1 is proof that J will be able to judge
     let b1 = amf_signature.R_1 == recipient_secret_key.secret_key * amf_signature.E_R_1;
+    // b2 is proof that M will be able to judge
     let b2 = amf_signature.R_2 == recipient_secret_key.secret_key * amf_signature.E_R_2;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        amf_signature.J,
+        amf_signature.J_1,
+        amf_signature.J_2,
         amf_signature.R_1,
         amf_signature.R_2,
-        amf_signature.M,
-        amf_signature.E_J,
-        amf_signature.E_M,
+        amf_signature.M_1,
+        amf_signature.M_2,
+        amf_signature.E_J_1,
+        amf_signature.E_J_2,
+        amf_signature.E_M_1,
+        amf_signature.E_M_2,
     );
     let b3 = spok.verify(message, amf_signature.pi);
 
@@ -198,25 +237,31 @@ pub fn j_judge(
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
-    let b1 = amf_signature.J == judge_secret_key.secret_key * amf_signature.E_J;
+    // b1 is proof that the sender sent the message
+    let b1 = amf_signature.J_1 == judge_secret_key.secret_key * amf_signature.E_J_1;
+    // b2 is proof that M will also be able to judge
+    let b2 = amf_signature.J_2 == judge_secret_key.secret_key * amf_signature.E_J_2;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        amf_signature.J,
+        amf_signature.J_1,
+        amf_signature.J_2,
         amf_signature.R_1,
         amf_signature.R_2,
-        amf_signature.M,
-        amf_signature.E_J,
-        amf_signature.E_M,
+        amf_signature.M_1,
+        amf_signature.M_2,
+        amf_signature.E_J_1,
+        amf_signature.E_J_2,
+        amf_signature.E_M_1,
+        amf_signature.E_M_2,
     );
-    let b2 = spok.verify(message, amf_signature.pi);
+    let b3 = spok.verify(message, amf_signature.pi);
 
-    b1 && b2
+    b1 && b2 && b3
 }
 
-/// New function used by the second judge (M) to judge the message
 pub fn m_judge(
     m_secret_key: AMFSecretKey,
     sender_public_key: AMFPublicKey,
@@ -226,22 +271,29 @@ pub fn m_judge(
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
-    let b1 = amf_signature.M == m_secret_key.secret_key * amf_signature.E_M;
+    // b1 is proof that the sender sent the message
+    let b1 = amf_signature.M_1 == m_secret_key.secret_key * amf_signature.E_M_1;
+    // b2 is proof that J will also be able to judge
+    let b2 = amf_signature.M_2 == m_secret_key.secret_key * amf_signature.E_M_2;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        amf_signature.J,
+        amf_signature.J_1,
+        amf_signature.J_2,
         amf_signature.R_1,
         amf_signature.R_2,
-        amf_signature.M,
-        amf_signature.E_J,
-        amf_signature.E_M,
+        amf_signature.M_1,
+        amf_signature.M_2,
+        amf_signature.E_J_1,
+        amf_signature.E_J_2,
+        amf_signature.E_M_1,
+        amf_signature.E_M_2,
     );
-    let b2 = spok.verify(message, amf_signature.pi);
+    let b3 = spok.verify(message, amf_signature.pi);
 
-    b1 && b2
+    b1 && b2 && b3
 }
 
 pub fn forge(
@@ -254,35 +306,58 @@ pub fn forge(
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
-    let zeta = Scalar::random(&mut rng);
 
-    let delta = Scalar::random(&mut rng);
+    // J_1
+    let alpha = Scalar::random(&mut rng);
     let gamma = Scalar::random(&mut rng);
+
+    // J_2
+    let lambda = Scalar::random(&mut rng);
+    let mu = Scalar::random(&mut rng);
+
+    // R_1
+    let beta = Scalar::random(&mut rng);
+    let delta = Scalar::random(&mut rng);
+
+    // R_2
+    let zeta = Scalar::random(&mut rng);
     let theta = Scalar::random(&mut rng);
+
+    // M_1
+    let epsilon = Scalar::random(&mut rng);
     let eta = Scalar::random(&mut rng);
 
-    let J = gamma * g;
+    // M_2
+    let kappa = Scalar::random(&mut rng);
+    let iota = Scalar::random(&mut rng);
+
+    let J_1 = gamma * g;
+    let J_2 = mu * g;
     let R_1 = delta * g;
     let R_2 = theta * g;
-    let M = eta * g;
-    let E_J = alpha * g;
+    let M_1 = eta * g;
+    let M_2 = iota * g;
+    let E_J_1 = alpha * g;
+    let E_J_2 = lambda * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M = epsilon * g;
+    let E_M_1 = epsilon * g;
+    let E_M_2 = kappa * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
-        E_M,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
+        E_M_1,
+        E_M_2,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -307,20 +382,34 @@ pub fn forge(
                     s0_witness: None,
                     s1_witness: Some(theta),
                 },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(mu),
+                },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(iota),
+                },
             ),
         },
         message,
     );
     AMFSignature {
         pi,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
         E_R_1,
         E_R_2,
-        E_M,
+        E_M_1,
+        E_M_2,
     }
 }
 
@@ -334,34 +423,60 @@ pub fn r_forge(
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
+
+    // J_1
     let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
     let gamma = Scalar::random(&mut rng);
+
+    // J_2
+    let lambda = Scalar::random(&mut rng);
+    let mu = Scalar::random(&mut rng);
+
+    // R_1
+    let beta = Scalar::random(&mut rng);
+    let _delta = Scalar::random(&mut rng);
+
+    // R_2
+    let zeta = Scalar::random(&mut rng);
+    let _theta = Scalar::random(&mut rng);
+
+    // M_1
     let epsilon = Scalar::random(&mut rng);
     let eta = Scalar::random(&mut rng);
-    let zeta = Scalar::random(&mut rng);
+
+    // M_2
+    let kappa = Scalar::random(&mut rng);
+    let iota = Scalar::random(&mut rng);
 
     let recipient_public_key = recipient_secret_key.secret_key * g;
 
-    let J = gamma * g;
+    let J_1 = gamma * g;
+    let J_2 = mu * g;
     let R_1 = beta * recipient_public_key;
     let R_2 = zeta * recipient_public_key;
-    let M = eta * g;
-    let E_J = alpha * g;
+    let M_1 = eta * g;
+    let M_2 = iota * g;
+    let E_J_1 = alpha * g;
+    let E_J_2 = lambda * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M = epsilon * g;
+    let E_M_1 = epsilon * g;
+    let E_M_2 = kappa * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
-        E_M,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
+        E_M_1,
+        E_M_2,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -386,20 +501,34 @@ pub fn r_forge(
                     s0_witness: None,
                     s1_witness: Some(zeta * recipient_secret_key.secret_key),
                 },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(mu),
+                },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(iota),
+                },
             ),
         },
         message,
     );
     AMFSignature {
         pi,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
         E_R_1,
         E_R_2,
-        E_M,
+        E_M_1,
+        E_M_2,
     }
 }
 
@@ -413,34 +542,60 @@ pub fn j_forge(
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
+
+    // J_1
     let alpha = Scalar::random(&mut rng);
+    let _gamma = Scalar::random(&mut rng);
+
+    // J_2
+    let lambda = Scalar::random(&mut rng);
+    let _mu = Scalar::random(&mut rng);
+
+    // R_1
     let beta = Scalar::random(&mut rng);
-    let theta = Scalar::random(&mut rng);
+    let _delta = Scalar::random(&mut rng);
+
+    // R_2
     let zeta = Scalar::random(&mut rng);
+    let theta = Scalar::random(&mut rng);
+
+    // M_1
     let epsilon = Scalar::random(&mut rng);
     let eta = Scalar::random(&mut rng);
 
+    // M_2
+    let kappa = Scalar::random(&mut rng);
+    let iota = Scalar::random(&mut rng);
+
     let judge_public_key = judge_secret_key.secret_key * g;
 
-    let J = alpha * judge_public_key;
+    let J_1 = alpha * judge_public_key;
+    let J_2 = lambda * judge_public_key;
     let R_1 = beta * recipient_public_key.public_key;
     let R_2 = theta * g;
-    let M = eta * g;
-    let E_J = alpha * g;
+    let M_1 = eta * g;
+    let M_2 = iota * g;
+    let E_J_1 = alpha * g;
+    let E_J_2 = lambda * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M = epsilon * g;
+    let E_M_1 = epsilon * g;
+    let E_M_2 = kappa * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key,
         m_public_key.public_key,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
-        E_M,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
+        E_M_1,
+        E_M_2,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -465,20 +620,34 @@ pub fn j_forge(
                     s0_witness: None,
                     s1_witness: Some(theta),
                 },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(lambda * judge_secret_key.secret_key),
+                },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(iota),
+                },
             ),
         },
         message,
     );
     AMFSignature {
         pi,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
         E_R_1,
         E_R_2,
-        E_M,
+        E_M_1,
+        E_M_2,
     }
 }
 
@@ -492,34 +661,60 @@ pub fn m_forge(
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
+
+    // J_1
     let alpha = Scalar::random(&mut rng);
+    let gamma = Scalar::random(&mut rng);
+
+    // J_2
+    let lambda = Scalar::random(&mut rng);
+    let mu = Scalar::random(&mut rng);
+
+    // R_1
     let beta = Scalar::random(&mut rng);
     let delta = Scalar::random(&mut rng);
-    let gamma = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
+
+    // R_2
     let zeta = Scalar::random(&mut rng);
+    let _theta = Scalar::random(&mut rng);
+
+    // M_1
+    let epsilon = Scalar::random(&mut rng);
+    let _eta = Scalar::random(&mut rng);
+
+    // M_2
+    let kappa = Scalar::random(&mut rng);
+    let _iota = Scalar::random(&mut rng);
 
     let m_public_key = m_secret_key.secret_key * g;
 
-    let J = gamma * g;
+    let J_1 = gamma * g;
+    let J_2 = mu * g;
     let R_1 = delta * g;
     let R_2 = zeta * recipient_public_key.public_key;
-    let M = epsilon * m_public_key;
-    let E_J = alpha * g;
+    let M_1 = epsilon * m_public_key;
+    let M_2 = kappa * m_public_key;
+    let E_J_1 = alpha * g;
+    let E_J_2 = lambda * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M = epsilon * g;
+    let E_M_1 = epsilon * g;
+    let E_M_2 = kappa * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
-        E_M,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
+        E_M_1,
+        E_M_2,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -544,20 +739,34 @@ pub fn m_forge(
                     s0_witness: Some(epsilon),
                     s1_witness: None,
                 },
+                OrWitness {
+                    b: false,
+                    s0_witness: Some(epsilon),
+                    s1_witness: None,
+                },
+                OrWitness {
+                    b: true,
+                    s0_witness: None,
+                    s1_witness: Some(kappa * m_secret_key.secret_key),
+                },
             ),
         },
         message,
     );
     AMFSignature {
         pi,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
         E_R_1,
         E_R_2,
-        E_M,
+        E_M_1,
+        E_M_2,
     }
 }
 
@@ -571,33 +780,61 @@ pub fn j_m_forge(
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
+
+    // J_1
     let alpha = Scalar::random(&mut rng);
+    let _gamma = Scalar::random(&mut rng);
+
+    // J_2
+    let lambda = Scalar::random(&mut rng);
+    let _mu = Scalar::random(&mut rng);
+
+    // R_1
     let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
+    let _delta = Scalar::random(&mut rng);
+
+    // R_2
     let zeta = Scalar::random(&mut rng);
+    let _theta = Scalar::random(&mut rng);
+
+    // M_1
+    let epsilon = Scalar::random(&mut rng);
+    let _eta = Scalar::random(&mut rng);
+
+    // M_2
+    let kappa = Scalar::random(&mut rng);
+    let _iota = Scalar::random(&mut rng);
 
     let judge_public_key = judge_secret_key.secret_key * g;
     let m_public_key = m_secret_key.secret_key * g;
 
-    let J = alpha * judge_public_key;
+    let J_1 = alpha * judge_public_key;
+    let J_2 = lambda * judge_public_key;
     let R_1 = beta * recipient_public_key.public_key;
     let R_2 = zeta * recipient_public_key.public_key;
-    let M = epsilon * m_public_key;
-    let E_J = alpha * g;
+    let M_1 = epsilon * m_public_key;
+    let M_2 = kappa * m_public_key;
+    let E_J_1 = alpha * g;
+    let E_J_2 = lambda * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M = epsilon * g;
+    let E_M_1 = epsilon * g;
+    let E_M_2 = kappa * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key,
         m_public_key,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
-        E_M,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
+        E_M_1,
+        E_M_2,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -622,20 +859,34 @@ pub fn j_m_forge(
                     s0_witness: Some(epsilon),
                     s1_witness: None,
                 },
+                OrWitness {
+                    b: false,
+                    s0_witness: Some(epsilon),
+                    s1_witness: None,
+                },
+                OrWitness {
+                    b: false,
+                    s0_witness: Some(alpha),
+                    s1_witness: None,
+                },
             ),
         },
         message,
     );
     AMFSignature {
         pi,
-        J,
+        J_1,
+        J_2,
         R_1,
         R_2,
-        M,
-        E_J,
+        M_1,
+        M_2,
+        E_J_1,
+        E_J_2,
         E_R_1,
         E_R_2,
-        E_M,
+        E_M_1,
+        E_M_2,
     }
 }
 
@@ -763,12 +1014,16 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J,
+            amf_signature.J_1,
+            amf_signature.J_2,
             amf_signature.R_1,
             amf_signature.R_2,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.M_1,
+            amf_signature.M_2,
+            amf_signature.E_J_1,
+            amf_signature.E_J_2,
+            amf_signature.E_M_1,
+            amf_signature.E_M_2,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -833,12 +1088,16 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J,
+            amf_signature.J_1,
+            amf_signature.J_2,
             amf_signature.R_1,
             amf_signature.R_2,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.M_1,
+            amf_signature.M_2,
+            amf_signature.E_J_1,
+            amf_signature.E_J_2,
+            amf_signature.E_M_1,
+            amf_signature.E_M_2,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -902,12 +1161,16 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J,
+            amf_signature.J_1,
+            amf_signature.J_2,
             amf_signature.R_1,
             amf_signature.R_2,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.M_1,
+            amf_signature.M_2,
+            amf_signature.E_J_1,
+            amf_signature.E_J_2,
+            amf_signature.E_M_1,
+            amf_signature.E_M_2,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -971,12 +1234,16 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J,
+            amf_signature.J_1,
+            amf_signature.J_2,
             amf_signature.R_1,
             amf_signature.R_2,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.M_1,
+            amf_signature.M_2,
+            amf_signature.E_J_1,
+            amf_signature.E_J_2,
+            amf_signature.E_M_1,
+            amf_signature.E_M_2,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1040,12 +1307,16 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J,
+            amf_signature.J_1,
+            amf_signature.J_2,
             amf_signature.R_1,
             amf_signature.R_2,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.M_1,
+            amf_signature.M_2,
+            amf_signature.E_J_1,
+            amf_signature.E_J_2,
+            amf_signature.E_M_1,
+            amf_signature.E_M_2,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }

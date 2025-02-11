@@ -213,10 +213,20 @@ pub struct SerializableAMFInternalSignature {
         SerializableChaumPedersenProverCommitment,
         SerializableRistrettoPoint,
     ),
+    or_prover_commitment_4: (
+        SerializableChaumPedersenProverCommitment,
+        SerializableRistrettoPoint,
+    ),
+    or_prover_commitment_5: (
+        SerializableChaumPedersenProverCommitment,
+        SerializableRistrettoPoint,
+    ),
     or_prover_response_0: SerializableOrProverResponse,
     or_prover_response_1: SerializableOrProverResponse,
     or_prover_response_2: SerializableOrProverResponse,
     or_prover_response_3: SerializableOrProverResponse,
+    or_prover_response_4: SerializableOrProverResponse,
+    or_prover_response_5: SerializableOrProverResponse,
 }
 impl From<AMFInternalSignature> for SerializableAMFInternalSignature {
     fn from(signature: AMFInternalSignature) -> Self {
@@ -237,10 +247,20 @@ impl From<AMFInternalSignature> for SerializableAMFInternalSignature {
                 signature.prover_commitment.3 .0.into(),
                 signature.prover_commitment.3 .1.into(),
             ),
+            or_prover_commitment_4: (
+                signature.prover_commitment.4 .0.into(),
+                signature.prover_commitment.4 .1.into(),
+            ),
+            or_prover_commitment_5: (
+                signature.prover_commitment.5 .0.into(),
+                signature.prover_commitment.5 .1.into(),
+            ),
             or_prover_response_0: signature.prover_response.0.into(),
             or_prover_response_1: signature.prover_response.1.into(),
             or_prover_response_2: signature.prover_response.2.into(),
             or_prover_response_3: signature.prover_response.3.into(),
+            or_prover_response_4: signature.prover_response.4.into(),
+            or_prover_response_5: signature.prover_response.5.into(),
         }
     }
 }
@@ -264,12 +284,22 @@ impl From<SerializableAMFInternalSignature> for AMFInternalSignature {
                     serialized_signature.or_prover_commitment_3.0.into(),
                     serialized_signature.or_prover_commitment_3.1.into(),
                 ),
+                (
+                    serialized_signature.or_prover_commitment_4.0.into(),
+                    serialized_signature.or_prover_commitment_4.1.into(),
+                ),
+                (
+                    serialized_signature.or_prover_commitment_5.0.into(),
+                    serialized_signature.or_prover_commitment_5.1.into(),
+                ),
             ),
             prover_response: (
                 serialized_signature.or_prover_response_0.into(),
                 serialized_signature.or_prover_response_1.into(),
                 serialized_signature.or_prover_response_2.into(),
                 serialized_signature.or_prover_response_3.into(),
+                serialized_signature.or_prover_response_4.into(),
+                serialized_signature.or_prover_response_5.into(),
             ),
         }
     }
@@ -278,27 +308,35 @@ impl From<SerializableAMFInternalSignature> for AMFInternalSignature {
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct SerializableAMFSignature {
     pi: SerializableAMFInternalSignature,
-    J: SerializableRistrettoPoint,
+    J_1: SerializableRistrettoPoint,
+    J_2: SerializableRistrettoPoint,
     R_1: SerializableRistrettoPoint,
     R_2: SerializableRistrettoPoint,
-    M: SerializableRistrettoPoint,
-    E_J: SerializableRistrettoPoint,
+    M_1: SerializableRistrettoPoint,
+    M_2: SerializableRistrettoPoint,
+    E_J_1: SerializableRistrettoPoint,
+    E_J_2: SerializableRistrettoPoint,
     E_R_1: SerializableRistrettoPoint,
     E_R_2: SerializableRistrettoPoint,
-    E_M: SerializableRistrettoPoint,
+    E_M_1: SerializableRistrettoPoint,
+    E_M_2: SerializableRistrettoPoint,
 }
 impl From<AMFSignature> for SerializableAMFSignature {
     fn from(amf_signature: AMFSignature) -> Self {
         SerializableAMFSignature {
             pi: amf_signature.pi.into(),
-            J: amf_signature.J.into(),
+            J_1: amf_signature.J_1.into(),
+            J_2: amf_signature.J_2.into(),
             R_1: amf_signature.R_1.into(),
             R_2: amf_signature.R_2.into(),
-            M: amf_signature.M.into(),
-            E_J: amf_signature.E_J.into(),
+            M_1: amf_signature.M_1.into(),
+            M_2: amf_signature.M_2.into(),
+            E_J_1: amf_signature.E_J_1.into(),
+            E_J_2: amf_signature.E_J_2.into(),
             E_R_1: amf_signature.E_R_1.into(),
             E_R_2: amf_signature.E_R_2.into(),
-            E_M: amf_signature.E_M.into(),
+            E_M_1: amf_signature.E_M_1.into(),
+            E_M_2: amf_signature.E_M_2.into(),
         }
     }
 }
@@ -306,14 +344,18 @@ impl From<SerializableAMFSignature> for AMFSignature {
     fn from(serialized_amf_signature: SerializableAMFSignature) -> Self {
         AMFSignature {
             pi: serialized_amf_signature.pi.into(),
-            J: serialized_amf_signature.J.into(),
+            J_1: serialized_amf_signature.J_1.into(),
+            J_2: serialized_amf_signature.J_2.into(),
             R_1: serialized_amf_signature.R_1.into(),
             R_2: serialized_amf_signature.R_2.into(),
-            M: serialized_amf_signature.M.into(),
-            E_J: serialized_amf_signature.E_J.into(),
+            M_1: serialized_amf_signature.M_1.into(),
+            M_2: serialized_amf_signature.M_2.into(),
+            E_J_1: serialized_amf_signature.E_J_1.into(),
+            E_J_2: serialized_amf_signature.E_J_2.into(),
             E_R_1: serialized_amf_signature.E_R_1.into(),
             E_R_2: serialized_amf_signature.E_R_2.into(),
-            E_M: serialized_amf_signature.E_M.into(),
+            E_M_1: serialized_amf_signature.E_M_1.into(),
+            E_M_2: serialized_amf_signature.E_M_2.into(),
         }
     }
 }
