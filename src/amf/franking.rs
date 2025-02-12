@@ -157,7 +157,7 @@ pub fn frank(
         pi,
         RP,
         R,
-        SP: SP,
+        SP,
         E_RP,
         E_R,
         E_SP,
@@ -190,7 +190,7 @@ pub fn verify(
     b1 && b2
 }
 
-pub fn j_judge(
+pub fn rp_judge(
     rp_secret_key: AMFSecretKey,
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
@@ -216,7 +216,7 @@ pub fn j_judge(
     b1 && b2
 }
 
-pub fn m_judge(
+pub fn sp_judge(
     sp_secret_key: AMFSecretKey,
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
@@ -318,7 +318,7 @@ pub fn forge(
         pi,
         RP,
         R,
-        SP: SP,
+        SP,
         E_RP,
         E_R,
         E_SP,
@@ -402,7 +402,7 @@ pub fn r_forge(
         pi,
         RP,
         R,
-        SP: SP,
+        SP,
         E_RP,
         E_R,
         E_SP,
@@ -487,14 +487,14 @@ pub fn m_forge(
         pi,
         RP,
         R,
-        SP: SP,
+        SP,
         E_RP,
         E_R,
         E_SP,
     }
 }
 
-pub fn j_forge(
+pub fn rp_forge(
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
     rp_secret_key: AMFSecretKey,
@@ -571,14 +571,14 @@ pub fn j_forge(
         pi,
         RP,
         R,
-        SP: SP,
+        SP,
         E_RP,
         E_R,
         E_SP,
     }
 }
 
-pub fn j_r_forge(
+pub fn rp_r_forge(
     sender_public_key: AMFPublicKey,
     rp_secret_key: AMFSecretKey,
     recipient_secret_key: AMFSecretKey,
@@ -655,14 +655,14 @@ pub fn j_r_forge(
         pi,
         RP,
         R,
-        SP: SP,
+        SP,
         E_RP,
         E_R,
         E_SP,
     }
 }
 
-pub fn m_r_forge(
+pub fn sp_r_forge(
     sender_public_key: AMFPublicKey,
     sp_secret_key: AMFSecretKey,
     recipient_secret_key: AMFSecretKey,
@@ -739,14 +739,14 @@ pub fn m_r_forge(
         pi,
         RP,
         R,
-        SP: SP,
+        SP,
         E_RP,
         E_R,
         E_SP,
     }
 }
 
-pub fn j_m_forge(
+pub fn rp_sp_forge(
     sender_public_key: AMFPublicKey,
     recipient_public_key: AMFPublicKey,
     rp_secret_key: AMFSecretKey,
@@ -821,7 +821,7 @@ pub fn j_m_forge(
         pi,
         RP,
         R,
-        SP: SP,
+        SP,
         E_RP,
         E_R,
         E_SP,
@@ -869,7 +869,7 @@ mod tests {
         assert!(verification_result);
 
         // 6. Judge the message (J)
-        let judging_result_j = j_judge(
+        let judging_result_j = rp_judge(
             rp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -881,7 +881,7 @@ mod tests {
         assert!(judging_result_j);
 
         // 7. Judge the message (M)
-        let judging_result_m = m_judge(
+        let judging_result_m = sp_judge(
             sp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -924,7 +924,7 @@ mod tests {
         assert!(!verification_result);
 
         // The forged signature should NOT be judged by the judge, as the judge can detect the forgery
-        let judging_result_j = j_judge(
+        let judging_result_j = rp_judge(
             rp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -936,7 +936,7 @@ mod tests {
         assert!(!judging_result_j);
 
         // The forged signature should NOT be judged by the other judge
-        let judging_result_m = m_judge(
+        let judging_result_m = sp_judge(
             sp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -994,7 +994,7 @@ mod tests {
 
         // The forged signature should NOT be judged by the judge, as the judge can detect the forgery
         // This is what maintains "receiver binding"
-        let judging_result_j = j_judge(
+        let judging_result_j = rp_judge(
             rp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1005,7 +1005,7 @@ mod tests {
         );
         assert!(!judging_result_j);
 
-        let judging_result_m = m_judge(
+        let judging_result_m = sp_judge(
             sp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1040,7 +1040,7 @@ mod tests {
         let message = b"hello world!";
 
         // Forge an AMF signature for "judge compromise deniability"
-        let amf_signature = j_forge(
+        let amf_signature = rp_forge(
             sender_public_key,
             recipient_public_key,
             rp_secret_key,
@@ -1061,7 +1061,7 @@ mod tests {
         assert!(!verification_result);
 
         // The forged signature should be judged by the judge
-        let judging_result_j = j_judge(
+        let judging_result_j = rp_judge(
             rp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1073,7 +1073,7 @@ mod tests {
         assert!(judging_result_j);
 
         // The forged signature should not be judged by the other judge
-        let judging_result_m = m_judge(
+        let judging_result_m = sp_judge(
             sp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1129,7 +1129,7 @@ mod tests {
         assert!(!verification_result);
 
         // The forged signature should be judged by the judge
-        let judging_result_m = m_judge(
+        let judging_result_m = sp_judge(
             sp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1141,7 +1141,7 @@ mod tests {
         assert!(judging_result_m);
 
         // The forged signature should not be judged by the other judge
-        let judging_result_j = j_judge(
+        let judging_result_j = rp_judge(
             rp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1176,7 +1176,7 @@ mod tests {
         let message = b"hello world!";
 
         // Forge an AMF signature for "judge compromise deniability"
-        let amf_signature = j_r_forge(
+        let amf_signature = rp_r_forge(
             sender_public_key,
             rp_secret_key,
             recipient_secret_key,
@@ -1197,7 +1197,7 @@ mod tests {
         assert!(verification_result);
 
         // The forged signature should be judged by J
-        let judging_result_j = j_judge(
+        let judging_result_j = rp_judge(
             rp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1209,7 +1209,7 @@ mod tests {
         assert!(judging_result_j);
 
         // The forged signature should not be judged by M
-        let judging_result_m = m_judge(
+        let judging_result_m = sp_judge(
             sp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1244,7 +1244,7 @@ mod tests {
         let message = b"hello world!";
 
         // Forge an AMF signature for "judge compromise deniability"
-        let amf_signature = m_r_forge(
+        let amf_signature = sp_r_forge(
             sender_public_key,
             sp_secret_key,
             recipient_secret_key,
@@ -1265,7 +1265,7 @@ mod tests {
         assert!(verification_result);
 
         // The forged signature should not be judged by J
-        let judging_result_j = j_judge(
+        let judging_result_j = rp_judge(
             rp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1277,7 +1277,7 @@ mod tests {
         assert!(!judging_result_j);
 
         // The forged signature should be judged by M
-        let judging_result_m = m_judge(
+        let judging_result_m = sp_judge(
             sp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1312,7 +1312,7 @@ mod tests {
         let message = b"hello world!";
 
         // Forge an AMF signature for "judge compromise deniability"
-        let amf_signature = j_m_forge(
+        let amf_signature = rp_sp_forge(
             sender_public_key,
             recipient_public_key,
             rp_secret_key,
@@ -1333,7 +1333,7 @@ mod tests {
         assert!(verification_result);
 
         // The forged signature should be judged by the judge
-        let judging_result_m = m_judge(
+        let judging_result_m = sp_judge(
             sp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1345,7 +1345,7 @@ mod tests {
         assert!(judging_result_m);
 
         // The forged signature should not be judged by the other judge
-        let judging_result_j = j_judge(
+        let judging_result_j = rp_judge(
             rp_secret_key,
             sender_public_key,
             recipient_public_key,
