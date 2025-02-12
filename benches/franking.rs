@@ -13,7 +13,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     // 1. Initialize a Recipient
     let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
     // 2. Initialize a Judge
-    let (judge_public_key, judge_secret_key) = keygen(AMFRole::Judge);
+    let (judge_public_key, judge_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
 
     // 3. Initialize a message
     let message = b"hello world!";

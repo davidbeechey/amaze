@@ -24,10 +24,10 @@ This was hacked together in a weekend in 2022 when I knew even less cryptography
 let (sender_public_key, sender_secret_key) = amaze::amf::keygen(amaze::amf::AMFRole::Sender);
 // 1. Initialize a Recipient
 let (recipient_public_key, recipient_secret_key) = amaze::amf::keygen(amaze::amf::AMFRole::Recipient);
-// 2. Initialize a Judge
-let (judge_public_key, judge_secret_key) = amaze::amf::keygen(amaze::amf::AMFRole::Judge);
-// 3. Initialize a second Judge (M)
-let (m_public_key, _m_secret_key) = amaze::amf::keygen(amaze::amf::AMFRole::Judge);
+// 2. Initialize a Sender Platform's judge
+let (rp_public_key, rp_secret_key) = amaze::amf::keygen(amaze::amf::AMFRole::SenderPlatformJudge);
+// 3. Initialize a Message Platform's judge
+let (sp_public_key, sp_secret_key) = amaze::amf::keygen(amaze::amf::AMFRole::ReceiverPlatformJudge);
 
 // 3. Initialize a message
 let message = b"hello world!";
@@ -37,8 +37,8 @@ let amf_signature = amaze::amf::frank(
     sender_secret_key,
     sender_public_key,
     recipient_public_key,
-    judge_public_key,
-    m_public_key,
+    rp_public_key,
+    sp_public_key,
     message,
 );
 
@@ -47,36 +47,36 @@ let verification_result = amaze::amf::verify(
     recipient_secret_key,
     sender_public_key,
     recipient_public_key,
-    judge_public_key,
-    m_public_key,
+    rp_public_key,
+    sp_public_key,
     message,
     amf_signature,
 );
 assert!(verification_result);
 
-// 6. Judge the message (J)
-let judging_result = amaze::amf::j_judge(
-    judge_secret_key,
+// 6. Judge the message (RP)
+let rp_judging_result = amaze::amf::j_judge(
+    rp_secret_key,
     sender_public_key,
     recipient_public_key,
-    judge_public_key,
-    m_public_key,
+    rp_public_key,
+    sp_public_key,
     message,
     amf_signature,
 );
-assert!(judging_result);
+assert!(rp_judging_result);
 
-// 7. Judge the message (M)
-let m_judging_result = amaze::amf::m_judge(
-    _m_secret_key,
+// 7. Judge the message (SP)
+let sp_judging_result = amaze::amf::m_judge(
+    sp_secret_key,
     sender_public_key,
     recipient_public_key,
-    judge_public_key,
-    m_public_key,
+    rp_public_key,
+    sp_public_key,
     message,
     amf_signature,
 );
-assert!(m_judging_result);
+assert!(sp_judging_result);
 ```
 
 ## Usage

@@ -319,12 +319,12 @@ impl From<AMFSignature> for SerializableAMFSignature {
     fn from(amf_signature: AMFSignature) -> Self {
         SerializableAMFSignature {
             pi: amf_signature.pi.into(),
-            J: amf_signature.J.into(),
+            J: amf_signature.RP.into(),
             R: amf_signature.R.into(),
-            M: amf_signature.M.into(),
-            E_J: amf_signature.E_J.into(),
+            M: amf_signature.SP.into(),
+            E_J: amf_signature.E_RP.into(),
             E_R: amf_signature.E_R.into(),
-            E_M: amf_signature.E_M.into(),
+            E_M: amf_signature.E_SP.into(),
         }
     }
 }
@@ -332,12 +332,12 @@ impl From<SerializableAMFSignature> for AMFSignature {
     fn from(serialized_amf_signature: SerializableAMFSignature) -> Self {
         AMFSignature {
             pi: serialized_amf_signature.pi.into(),
-            J: serialized_amf_signature.J.into(),
+            RP: serialized_amf_signature.J.into(),
             R: serialized_amf_signature.R.into(),
-            M: serialized_amf_signature.M.into(),
-            E_J: serialized_amf_signature.E_J.into(),
+            SP: serialized_amf_signature.M.into(),
+            E_RP: serialized_amf_signature.E_J.into(),
             E_R: serialized_amf_signature.E_R.into(),
-            E_M: serialized_amf_signature.E_M.into(),
+            E_SP: serialized_amf_signature.E_M.into(),
         }
     }
 }
@@ -415,9 +415,9 @@ mod tests {
         // 1. Initialize a Recipient
         let (recipient_public_key, _recipient_secret_key) = keygen(AMFRole::Recipient);
         // 2. Initialize a Judge
-        let (judge_public_key, _judge_secret_key) = keygen(AMFRole::Judge);
+        let (rp_public_key, _rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
         // Initialize a second Judge (M)
-        let (m_public_key, _m_secret_key) = keygen(AMFRole::Judge);
+        let (sp_public_key, _sp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
 
         // 3. Initialize a message
         let message = b"hello world!";
@@ -427,8 +427,8 @@ mod tests {
             sender_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
         );
 

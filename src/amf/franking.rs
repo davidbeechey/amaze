@@ -24,7 +24,8 @@ use super::spok_amf::AMFSPoK;
 pub enum AMFRole {
     Sender,
     Recipient,
-    Judge,
+    ReceiverPlatformJudge,
+    SenderPlatformJudge,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -63,12 +64,12 @@ pub(crate) type AMFInternalSignature = FiatShamirSignature<
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct AMFSignature {
     pub pi: AMFInternalSignature,
-    pub J: RistrettoPoint,
+    pub RP: RistrettoPoint,
     pub R: RistrettoPoint,
-    pub M: RistrettoPoint,
-    pub E_J: RistrettoPoint,
+    pub SP: RistrettoPoint,
+    pub E_RP: RistrettoPoint,
     pub E_R: RistrettoPoint,
-    pub E_M: RistrettoPoint,
+    pub E_SP: RistrettoPoint,
 }
 
 pub fn keygen(role: AMFRole) -> (AMFPublicKey, AMFSecretKey) {
@@ -87,8 +88,8 @@ pub fn frank(
     sender_secret_key: AMFSecretKey,
     sender_public_key: AMFPublicKey,
     recipient_public_key: AMFPublicKey,
-    judge_public_key: AMFPublicKey,
-    m_public_key: AMFPublicKey,
+    rp_public_key: AMFPublicKey,
+    sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
@@ -98,22 +99,22 @@ pub fn frank(
     let beta = Scalar::random(&mut rng);
     let epsilon = Scalar::random(&mut rng);
 
-    let J = alpha * judge_public_key.public_key;
+    let RP = alpha * rp_public_key.public_key;
     let R = beta * recipient_public_key.public_key;
-    let M = epsilon * m_public_key.public_key;
-    let E_J = alpha * g;
+    let SP = epsilon * sp_public_key.public_key;
+    let E_RP = alpha * g;
     let E_R = beta * g;
-    let E_M = epsilon * g;
+    let E_SP = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key.public_key,
-        m_public_key.public_key,
-        J,
+        rp_public_key.public_key,
+        sp_public_key.public_key,
+        RP,
         R,
-        M,
-        E_J,
-        E_M,
+        SP,
+        E_RP,
+        E_SP,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -154,12 +155,12 @@ pub fn frank(
     );
     AMFSignature {
         pi,
-        J,
+        RP,
         R,
-        M,
-        E_J,
+        SP: SP,
+        E_RP,
         E_R,
-        E_M,
+        E_SP,
     }
 }
 
@@ -167,8 +168,8 @@ pub fn verify(
     recipient_secret_key: AMFSecretKey,
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
-    judge_public_key: AMFPublicKey,
-    m_public_key: AMFPublicKey,
+    rp_public_key: AMFPublicKey,
+    sp_public_key: AMFPublicKey,
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
@@ -176,13 +177,13 @@ pub fn verify(
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key.public_key,
-        m_public_key.public_key,
-        amf_signature.J,
+        rp_public_key.public_key,
+        sp_public_key.public_key,
+        amf_signature.RP,
         amf_signature.R,
-        amf_signature.M,
-        amf_signature.E_J,
-        amf_signature.E_M,
+        amf_signature.SP,
+        amf_signature.E_RP,
+        amf_signature.E_SP,
     );
     let b2 = spok.verify(message, amf_signature.pi);
 
@@ -190,25 +191,25 @@ pub fn verify(
 }
 
 pub fn j_judge(
-    judge_secret_key: AMFSecretKey,
+    rp_secret_key: AMFSecretKey,
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
-    judge_public_key: AMFPublicKey,
-    m_public_key: AMFPublicKey,
+    rp_public_key: AMFPublicKey,
+    sp_public_key: AMFPublicKey,
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
-    let b1 = amf_signature.J == judge_secret_key.secret_key * amf_signature.E_J;
+    let b1 = amf_signature.RP == rp_secret_key.secret_key * amf_signature.E_RP;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key.public_key,
-        m_public_key.public_key,
-        amf_signature.J,
+        rp_public_key.public_key,
+        sp_public_key.public_key,
+        amf_signature.RP,
         amf_signature.R,
-        amf_signature.M,
-        amf_signature.E_J,
-        amf_signature.E_M,
+        amf_signature.SP,
+        amf_signature.E_RP,
+        amf_signature.E_SP,
     );
     let b2 = spok.verify(message, amf_signature.pi);
 
@@ -216,25 +217,25 @@ pub fn j_judge(
 }
 
 pub fn m_judge(
-    m_secret_key: AMFSecretKey,
+    sp_secret_key: AMFSecretKey,
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
-    judge_public_key: AMFPublicKey,
-    m_public_key: AMFPublicKey,
+    rp_public_key: AMFPublicKey,
+    sp_public_key: AMFPublicKey,
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
-    let b1 = amf_signature.M == m_secret_key.secret_key * amf_signature.E_M;
+    let b1 = amf_signature.SP == sp_secret_key.secret_key * amf_signature.E_SP;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key.public_key,
-        m_public_key.public_key,
-        amf_signature.J,
+        rp_public_key.public_key,
+        sp_public_key.public_key,
+        amf_signature.RP,
         amf_signature.R,
-        amf_signature.M,
-        amf_signature.E_J,
-        amf_signature.E_M,
+        amf_signature.SP,
+        amf_signature.E_RP,
+        amf_signature.E_SP,
     );
     let b2 = spok.verify(message, amf_signature.pi);
 
@@ -244,8 +245,8 @@ pub fn m_judge(
 pub fn forge(
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
-    judge_public_key: AMFPublicKey,
-    m_public_key: AMFPublicKey,
+    rp_public_key: AMFPublicKey,
+    sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
@@ -259,22 +260,22 @@ pub fn forge(
     let delta = Scalar::random(&mut rng);
     let eta = Scalar::random(&mut rng);
 
-    let J = gamma * g;
+    let RP = gamma * g;
     let R = delta * g;
-    let M = eta * g;
-    let E_J = alpha * g;
+    let SP = eta * g;
+    let E_RP = alpha * g;
     let E_R = beta * g;
-    let E_M = epsilon * g;
+    let E_SP = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key.public_key,
-        m_public_key.public_key,
-        J,
+        rp_public_key.public_key,
+        sp_public_key.public_key,
+        RP,
         R,
-        M,
-        E_J,
-        E_M,
+        SP,
+        E_RP,
+        E_SP,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -315,20 +316,20 @@ pub fn forge(
     );
     AMFSignature {
         pi,
-        J,
+        RP,
         R,
-        M,
-        E_J,
+        SP: SP,
+        E_RP,
         E_R,
-        E_M,
+        E_SP,
     }
 }
 
 pub fn r_forge(
     sender_public_key: AMFPublicKey,
     recipient_secret_key: AMFSecretKey,
-    judge_public_key: AMFPublicKey,
-    m_public_key: AMFPublicKey,
+    rp_public_key: AMFPublicKey,
+    sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
@@ -343,22 +344,22 @@ pub fn r_forge(
 
     let recipient_public_key = recipient_secret_key.secret_key * g;
 
-    let J = gamma * g;
+    let RP = gamma * g;
     let R = beta * recipient_public_key;
-    let M = eta * g;
-    let E_J = alpha * g;
+    let SP = eta * g;
+    let E_RP = alpha * g;
     let E_R = beta * g;
-    let E_M = epsilon * g;
+    let E_SP = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key.public_key,
-        m_public_key.public_key,
-        J,
+        rp_public_key.public_key,
+        sp_public_key.public_key,
+        RP,
         R,
-        M,
-        E_J,
-        E_M,
+        SP,
+        E_RP,
+        E_SP,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -399,20 +400,20 @@ pub fn r_forge(
     );
     AMFSignature {
         pi,
-        J,
+        RP,
         R,
-        M,
-        E_J,
+        SP: SP,
+        E_RP,
         E_R,
-        E_M,
+        E_SP,
     }
 }
 
 pub fn m_forge(
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
-    m_secret_key: AMFSecretKey,
-    judge_public_key: AMFPublicKey,
+    sp_secret_key: AMFSecretKey,
+    rp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
@@ -426,24 +427,24 @@ pub fn m_forge(
     let gamma = Scalar::random(&mut rng);
     let delta = Scalar::random(&mut rng);
 
-    let m_public_key = m_secret_key.secret_key * g;
+    let sp_public_key = sp_secret_key.secret_key * g;
 
-    let J = gamma * g;
+    let RP = gamma * g;
     let R = delta * g;
-    let M = epsilon * m_public_key;
-    let E_J = alpha * g;
+    let SP = epsilon * sp_public_key;
+    let E_RP = alpha * g;
     let E_R = beta * g;
-    let E_M = epsilon * g;
+    let E_SP = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key.public_key,
-        m_public_key,
-        J,
+        rp_public_key.public_key,
+        sp_public_key,
+        RP,
         R,
-        M,
-        E_J,
-        E_M,
+        SP,
+        E_RP,
+        E_SP,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -461,7 +462,7 @@ pub fn m_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(epsilon * m_secret_key.secret_key),
+                    s1_witness: Some(epsilon * sp_secret_key.secret_key),
                 },
                 OrWitness {
                     b: false,
@@ -476,7 +477,7 @@ pub fn m_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(epsilon * m_secret_key.secret_key),
+                    s1_witness: Some(epsilon * sp_secret_key.secret_key),
                 },
             ),
         },
@@ -484,20 +485,20 @@ pub fn m_forge(
     );
     AMFSignature {
         pi,
-        J,
+        RP,
         R,
-        M,
-        E_J,
+        SP: SP,
+        E_RP,
         E_R,
-        E_M,
+        E_SP,
     }
 }
 
 pub fn j_forge(
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
-    judge_secret_key: AMFSecretKey,
-    m_public_key: AMFPublicKey,
+    rp_secret_key: AMFSecretKey,
+    sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
@@ -510,24 +511,24 @@ pub fn j_forge(
     let delta = Scalar::random(&mut rng);
     let eta = Scalar::random(&mut rng);
 
-    let judge_public_key = judge_secret_key.secret_key * g;
+    let rp_public_key = rp_secret_key.secret_key * g;
 
-    let J = alpha * judge_public_key;
+    let RP = alpha * rp_public_key;
     let R = delta * g;
-    let M = eta * g;
-    let E_J = alpha * g;
+    let SP = eta * g;
+    let E_RP = alpha * g;
     let E_R = beta * g;
-    let E_M = epsilon * g;
+    let E_SP = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key,
-        m_public_key.public_key,
-        J,
+        rp_public_key,
+        sp_public_key.public_key,
+        RP,
         R,
-        M,
-        E_J,
-        E_M,
+        SP,
+        E_RP,
+        E_SP,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -535,7 +536,7 @@ pub fn j_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(alpha * judge_secret_key.secret_key),
+                    s1_witness: Some(alpha * rp_secret_key.secret_key),
                 },
                 OrWitness {
                     b: false,
@@ -555,7 +556,7 @@ pub fn j_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(alpha * judge_secret_key.secret_key),
+                    s1_witness: Some(alpha * rp_secret_key.secret_key),
                 },
                 OrWitness {
                     b: true,
@@ -568,20 +569,20 @@ pub fn j_forge(
     );
     AMFSignature {
         pi,
-        J,
+        RP,
         R,
-        M,
-        E_J,
+        SP: SP,
+        E_RP,
         E_R,
-        E_M,
+        E_SP,
     }
 }
 
 pub fn j_r_forge(
     sender_public_key: AMFPublicKey,
-    judge_secret_key: AMFSecretKey,
+    rp_secret_key: AMFSecretKey,
     recipient_secret_key: AMFSecretKey,
-    m_public_key: AMFPublicKey,
+    sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
@@ -593,25 +594,25 @@ pub fn j_r_forge(
 
     let eta = Scalar::random(&mut rng);
 
-    let judge_public_key = judge_secret_key.secret_key * g;
+    let rp_public_key = rp_secret_key.secret_key * g;
     let recipient_public_key = recipient_secret_key.secret_key * g;
 
-    let J = alpha * judge_public_key;
+    let RP = alpha * rp_public_key;
     let R = beta * recipient_public_key;
-    let M = eta * g;
-    let E_J = alpha * g;
+    let SP = eta * g;
+    let E_RP = alpha * g;
     let E_R = beta * g;
-    let E_M = epsilon * g;
+    let E_SP = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key,
-        m_public_key.public_key,
-        J,
+        rp_public_key,
+        sp_public_key.public_key,
+        RP,
         R,
-        M,
-        E_J,
-        E_M,
+        SP,
+        E_RP,
+        E_SP,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -619,7 +620,7 @@ pub fn j_r_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(alpha * judge_secret_key.secret_key),
+                    s1_witness: Some(alpha * rp_secret_key.secret_key),
                 },
                 OrWitness {
                     b: true,
@@ -639,7 +640,7 @@ pub fn j_r_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(alpha * judge_secret_key.secret_key),
+                    s1_witness: Some(alpha * rp_secret_key.secret_key),
                 },
                 OrWitness {
                     b: true,
@@ -652,20 +653,20 @@ pub fn j_r_forge(
     );
     AMFSignature {
         pi,
-        J,
+        RP,
         R,
-        M,
-        E_J,
+        SP: SP,
+        E_RP,
         E_R,
-        E_M,
+        E_SP,
     }
 }
 
 pub fn m_r_forge(
     sender_public_key: AMFPublicKey,
-    m_secret_key: AMFSecretKey,
+    sp_secret_key: AMFSecretKey,
     recipient_secret_key: AMFSecretKey,
-    judge_public_key: AMFPublicKey,
+    rp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
@@ -677,25 +678,25 @@ pub fn m_r_forge(
 
     let gamma = Scalar::random(&mut rng);
 
-    let m_public_key = m_secret_key.secret_key * g;
+    let sp_public_key = sp_secret_key.secret_key * g;
     let recipient_public_key = recipient_secret_key.secret_key * g;
 
-    let J = gamma * g;
+    let RP = gamma * g;
     let R = beta * recipient_public_key;
-    let M = epsilon * m_public_key;
-    let E_J = alpha * g;
+    let SP = epsilon * sp_public_key;
+    let E_RP = alpha * g;
     let E_R = beta * g;
-    let E_M = epsilon * g;
+    let E_SP = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key.public_key,
-        m_public_key,
-        J,
+        rp_public_key.public_key,
+        sp_public_key,
+        RP,
         R,
-        M,
-        E_J,
-        E_M,
+        SP,
+        E_RP,
+        E_SP,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -713,7 +714,7 @@ pub fn m_r_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(epsilon * m_secret_key.secret_key),
+                    s1_witness: Some(epsilon * sp_secret_key.secret_key),
                 },
                 OrWitness {
                     b: true,
@@ -728,7 +729,7 @@ pub fn m_r_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(epsilon * m_secret_key.secret_key),
+                    s1_witness: Some(epsilon * sp_secret_key.secret_key),
                 },
             ),
         },
@@ -736,20 +737,20 @@ pub fn m_r_forge(
     );
     AMFSignature {
         pi,
-        J,
+        RP,
         R,
-        M,
-        E_J,
+        SP: SP,
+        E_RP,
         E_R,
-        E_M,
+        E_SP,
     }
 }
 
 pub fn j_m_forge(
     sender_public_key: AMFPublicKey,
     recipient_public_key: AMFPublicKey,
-    judge_secret_key: AMFSecretKey,
-    m_secret_key: AMFSecretKey,
+    rp_secret_key: AMFSecretKey,
+    sp_secret_key: AMFSecretKey,
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
@@ -759,25 +760,25 @@ pub fn j_m_forge(
     let beta = Scalar::random(&mut rng);
     let epsilon = Scalar::random(&mut rng);
 
-    let judge_public_key = judge_secret_key.secret_key * g;
-    let m_public_key = m_secret_key.secret_key * g;
+    let rp_public_key = rp_secret_key.secret_key * g;
+    let sp_public_key = sp_secret_key.secret_key * g;
 
-    let J = alpha * judge_public_key;
+    let RP = alpha * rp_public_key;
     let R = beta * recipient_public_key.public_key;
-    let M = epsilon * m_public_key;
-    let E_J = alpha * g;
+    let SP = epsilon * sp_public_key;
+    let E_RP = alpha * g;
     let E_R = beta * g;
-    let E_M = epsilon * g;
+    let E_SP = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
-        judge_public_key,
-        m_public_key,
-        J,
+        rp_public_key,
+        sp_public_key,
+        RP,
         R,
-        M,
-        E_J,
-        E_M,
+        SP,
+        E_RP,
+        E_SP,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -785,7 +786,7 @@ pub fn j_m_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(alpha * judge_secret_key.secret_key),
+                    s1_witness: Some(alpha * rp_secret_key.secret_key),
                 },
                 OrWitness {
                     b: false,
@@ -795,7 +796,7 @@ pub fn j_m_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(epsilon * m_secret_key.secret_key),
+                    s1_witness: Some(epsilon * sp_secret_key.secret_key),
                 },
                 OrWitness {
                     b: false,
@@ -818,12 +819,12 @@ pub fn j_m_forge(
     );
     AMFSignature {
         pi,
-        J,
+        RP,
         R,
-        M,
-        E_J,
+        SP: SP,
+        E_RP,
         E_R,
-        E_M,
+        E_SP,
     }
 }
 
@@ -838,9 +839,9 @@ mod tests {
         // 1. Initialize a Recipient
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
         // 2. Initialize a Judge
-        let (judge_public_key, judge_secret_key) = keygen(AMFRole::Judge);
+        let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
         // 3. Initialize a second Judge (M)
-        let (m_public_key, m_secret_key) = keygen(AMFRole::Judge);
+        let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
 
         // 3. Initialize a message
         let message = b"hello world!";
@@ -850,8 +851,8 @@ mod tests {
             sender_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
         );
 
@@ -860,8 +861,8 @@ mod tests {
             recipient_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -869,11 +870,11 @@ mod tests {
 
         // 6. Judge the message (J)
         let judging_result_j = j_judge(
-            judge_secret_key,
+            rp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -881,11 +882,11 @@ mod tests {
 
         // 7. Judge the message (M)
         let judging_result_m = m_judge(
-            m_secret_key,
+            sp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -896,8 +897,8 @@ mod tests {
     fn test_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
-        let (judge_public_key, judge_secret_key) = keygen(AMFRole::Judge);
-        let (m_public_key, m_secret_key) = keygen(AMFRole::Judge);
+        let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
+        let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
 
         let message = b"hello world!";
 
@@ -905,8 +906,8 @@ mod tests {
         let amf_signature = forge(
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
         );
 
@@ -915,8 +916,8 @@ mod tests {
             recipient_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -924,11 +925,11 @@ mod tests {
 
         // The forged signature should NOT be judged by the judge, as the judge can detect the forgery
         let judging_result_j = j_judge(
-            judge_secret_key,
+            rp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -936,11 +937,11 @@ mod tests {
 
         // The forged signature should NOT be judged by the other judge
         let judging_result_m = m_judge(
-            m_secret_key,
+            sp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -949,13 +950,13 @@ mod tests {
         // The forged signature should look valid
         let spok = AMFSPoK::new(
             sender_public_key.public_key,
-            judge_public_key.public_key,
-            m_public_key.public_key,
-            amf_signature.J,
+            rp_public_key.public_key,
+            sp_public_key.public_key,
+            amf_signature.RP,
             amf_signature.R,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.SP,
+            amf_signature.E_RP,
+            amf_signature.E_SP,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -964,8 +965,8 @@ mod tests {
     fn test_r_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
-        let (judge_public_key, judge_secret_key) = keygen(AMFRole::Judge);
-        let (m_public_key, m_secret_key) = keygen(AMFRole::Judge);
+        let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
+        let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
 
         let message = b"hello world!";
 
@@ -974,8 +975,8 @@ mod tests {
         let amf_signature = r_forge(
             sender_public_key,
             recipient_secret_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
         );
 
@@ -984,8 +985,8 @@ mod tests {
             recipient_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -994,22 +995,22 @@ mod tests {
         // The forged signature should NOT be judged by the judge, as the judge can detect the forgery
         // This is what maintains "receiver binding"
         let judging_result_j = j_judge(
-            judge_secret_key,
+            rp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
         assert!(!judging_result_j);
 
         let judging_result_m = m_judge(
-            m_secret_key,
+            sp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1018,13 +1019,13 @@ mod tests {
         // The forged signature should look valid
         let spok = AMFSPoK::new(
             sender_public_key.public_key,
-            judge_public_key.public_key,
-            m_public_key.public_key,
-            amf_signature.J,
+            rp_public_key.public_key,
+            sp_public_key.public_key,
+            amf_signature.RP,
             amf_signature.R,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.SP,
+            amf_signature.E_RP,
+            amf_signature.E_SP,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1033,8 +1034,8 @@ mod tests {
     fn test_j_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
-        let (judge_public_key, judge_secret_key) = keygen(AMFRole::Judge);
-        let (m_public_key, m_secret_key) = keygen(AMFRole::Judge);
+        let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
+        let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
 
         let message = b"hello world!";
 
@@ -1042,8 +1043,8 @@ mod tests {
         let amf_signature = j_forge(
             sender_public_key,
             recipient_public_key,
-            judge_secret_key,
-            m_public_key,
+            rp_secret_key,
+            sp_public_key,
             message,
         );
 
@@ -1052,8 +1053,8 @@ mod tests {
             recipient_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1061,11 +1062,11 @@ mod tests {
 
         // The forged signature should be judged by the judge
         let judging_result_j = j_judge(
-            judge_secret_key,
+            rp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1073,11 +1074,11 @@ mod tests {
 
         // The forged signature should not be judged by the other judge
         let judging_result_m = m_judge(
-            m_secret_key,
+            sp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1086,13 +1087,13 @@ mod tests {
         // The forged signature should look valid
         let spok = AMFSPoK::new(
             sender_public_key.public_key,
-            judge_public_key.public_key,
-            m_public_key.public_key,
-            amf_signature.J,
+            rp_public_key.public_key,
+            sp_public_key.public_key,
+            amf_signature.RP,
             amf_signature.R,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.SP,
+            amf_signature.E_RP,
+            amf_signature.E_SP,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1101,8 +1102,8 @@ mod tests {
     fn test_m_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
-        let (judge_public_key, judge_secret_key) = keygen(AMFRole::Judge);
-        let (m_public_key, m_secret_key) = keygen(AMFRole::Judge);
+        let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
+        let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
 
         let message = b"hello world!";
 
@@ -1110,8 +1111,8 @@ mod tests {
         let amf_signature = m_forge(
             sender_public_key,
             recipient_public_key,
-            m_secret_key,
-            judge_public_key,
+            sp_secret_key,
+            rp_public_key,
             message,
         );
 
@@ -1120,8 +1121,8 @@ mod tests {
             recipient_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1129,11 +1130,11 @@ mod tests {
 
         // The forged signature should be judged by the judge
         let judging_result_m = m_judge(
-            m_secret_key,
+            sp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1141,11 +1142,11 @@ mod tests {
 
         // The forged signature should not be judged by the other judge
         let judging_result_j = j_judge(
-            judge_secret_key,
+            rp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1154,13 +1155,13 @@ mod tests {
         // The forged signature should look valid
         let spok = AMFSPoK::new(
             sender_public_key.public_key,
-            judge_public_key.public_key,
-            m_public_key.public_key,
-            amf_signature.J,
+            rp_public_key.public_key,
+            sp_public_key.public_key,
+            amf_signature.RP,
             amf_signature.R,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.SP,
+            amf_signature.E_RP,
+            amf_signature.E_SP,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1169,17 +1170,17 @@ mod tests {
     fn test_j_r_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
-        let (judge_public_key, judge_secret_key) = keygen(AMFRole::Judge);
-        let (m_public_key, m_secret_key) = keygen(AMFRole::Judge);
+        let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
+        let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
 
         let message = b"hello world!";
 
         // Forge an AMF signature for "judge compromise deniability"
         let amf_signature = j_r_forge(
             sender_public_key,
-            judge_secret_key,
+            rp_secret_key,
             recipient_secret_key,
-            m_public_key,
+            sp_public_key,
             message,
         );
 
@@ -1188,8 +1189,8 @@ mod tests {
             recipient_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1197,11 +1198,11 @@ mod tests {
 
         // The forged signature should be judged by J
         let judging_result_j = j_judge(
-            judge_secret_key,
+            rp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1209,11 +1210,11 @@ mod tests {
 
         // The forged signature should not be judged by M
         let judging_result_m = m_judge(
-            m_secret_key,
+            sp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1222,13 +1223,13 @@ mod tests {
         // The forged signature should look valid
         let spok = AMFSPoK::new(
             sender_public_key.public_key,
-            judge_public_key.public_key,
-            m_public_key.public_key,
-            amf_signature.J,
+            rp_public_key.public_key,
+            sp_public_key.public_key,
+            amf_signature.RP,
             amf_signature.R,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.SP,
+            amf_signature.E_RP,
+            amf_signature.E_SP,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1237,17 +1238,17 @@ mod tests {
     fn test_m_r_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
-        let (judge_public_key, judge_secret_key) = keygen(AMFRole::Judge);
-        let (m_public_key, m_secret_key) = keygen(AMFRole::Judge);
+        let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
+        let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
 
         let message = b"hello world!";
 
         // Forge an AMF signature for "judge compromise deniability"
         let amf_signature = m_r_forge(
             sender_public_key,
-            m_secret_key,
+            sp_secret_key,
             recipient_secret_key,
-            judge_public_key,
+            rp_public_key,
             message,
         );
 
@@ -1256,8 +1257,8 @@ mod tests {
             recipient_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1265,11 +1266,11 @@ mod tests {
 
         // The forged signature should not be judged by J
         let judging_result_j = j_judge(
-            judge_secret_key,
+            rp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1277,11 +1278,11 @@ mod tests {
 
         // The forged signature should be judged by M
         let judging_result_m = m_judge(
-            m_secret_key,
+            sp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1290,13 +1291,13 @@ mod tests {
         // The forged signature should look valid
         let spok = AMFSPoK::new(
             sender_public_key.public_key,
-            judge_public_key.public_key,
-            m_public_key.public_key,
-            amf_signature.J,
+            rp_public_key.public_key,
+            sp_public_key.public_key,
+            amf_signature.RP,
             amf_signature.R,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.SP,
+            amf_signature.E_RP,
+            amf_signature.E_SP,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1305,8 +1306,8 @@ mod tests {
     fn test_j_m_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
-        let (judge_public_key, judge_secret_key) = keygen(AMFRole::Judge);
-        let (m_public_key, m_secret_key) = keygen(AMFRole::Judge);
+        let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
+        let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
 
         let message = b"hello world!";
 
@@ -1314,8 +1315,8 @@ mod tests {
         let amf_signature = j_m_forge(
             sender_public_key,
             recipient_public_key,
-            judge_secret_key,
-            m_secret_key,
+            rp_secret_key,
+            sp_secret_key,
             message,
         );
 
@@ -1324,8 +1325,8 @@ mod tests {
             recipient_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1333,11 +1334,11 @@ mod tests {
 
         // The forged signature should be judged by the judge
         let judging_result_m = m_judge(
-            m_secret_key,
+            sp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1345,11 +1346,11 @@ mod tests {
 
         // The forged signature should not be judged by the other judge
         let judging_result_j = j_judge(
-            judge_secret_key,
+            rp_secret_key,
             sender_public_key,
             recipient_public_key,
-            judge_public_key,
-            m_public_key,
+            rp_public_key,
+            sp_public_key,
             message,
             amf_signature,
         );
@@ -1358,13 +1359,13 @@ mod tests {
         // The forged signature should look valid
         let spok = AMFSPoK::new(
             sender_public_key.public_key,
-            judge_public_key.public_key,
-            m_public_key.public_key,
-            amf_signature.J,
+            rp_public_key.public_key,
+            sp_public_key.public_key,
+            amf_signature.RP,
             amf_signature.R,
-            amf_signature.M,
-            amf_signature.E_J,
-            amf_signature.E_M,
+            amf_signature.SP,
+            amf_signature.E_RP,
+            amf_signature.E_SP,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
