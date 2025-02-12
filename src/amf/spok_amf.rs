@@ -61,11 +61,9 @@ impl AMFSPoK {
         sender_public_key: RistrettoPoint,
         judge_public_key: RistrettoPoint,
         m_public_key: RistrettoPoint,
-        J_1: RistrettoPoint,
-        J_2: RistrettoPoint,
+        J: RistrettoPoint,
         R: RistrettoPoint,
-        M_1: RistrettoPoint,
-        M_2: RistrettoPoint,
+        M: RistrettoPoint,
         E_J: RistrettoPoint,
         E_M: RistrettoPoint,
     ) -> Self {
@@ -74,8 +72,8 @@ impl AMFSPoK {
         let s0_verifier = SchnorrVerifier::new(sender_public_key);
 
         // 1. [FIRST CLAUSE] Initialize Schnorr for the statement J_1 = g^u
-        let s1_prover = SchnorrProver::new(J_1);
-        let s1_verifier = SchnorrVerifier::new(J_1);
+        let s1_prover = SchnorrProver::new(J);
+        let s1_verifier = SchnorrVerifier::new(J);
 
         // 2. Combine the Schnorr proofs s0 and s1 into an OR proof or0
         let or0_prover = OrProver {
@@ -95,7 +93,7 @@ impl AMFSPoK {
         let s3_witness_statement = ChaumPedersenWitnessStatement {
             u: judge_public_key,
             v: E_J,
-            w: J_1,
+            w: J,
         };
         let s2_prover = ChaumPedersenProver::new(s3_witness_statement);
         let s2_verifier = ChaumPedersenVerifier::new(s3_witness_statement);
@@ -123,8 +121,8 @@ impl AMFSPoK {
         let s4_verifier = SchnorrVerifier::new(sender_public_key);
 
         // 7. [THIRD CLAUSE] Initialize Schnorr for the statement M_1 = g^x
-        let s5_prover = SchnorrProver::new(M_1);
-        let s5_verifier = SchnorrVerifier::new(M_1);
+        let s5_prover = SchnorrProver::new(M);
+        let s5_verifier = SchnorrVerifier::new(M);
 
         // 8. Combine the Schnorr proofs s4 and s5 into an OR proof or2
         let or2_prover = OrProver {
@@ -144,7 +142,7 @@ impl AMFSPoK {
         let s6_witness_statement = ChaumPedersenWitnessStatement {
             u: m_public_key,
             v: E_M,
-            w: M_1,
+            w: M,
         };
         let s6_prover = ChaumPedersenProver::new(s6_witness_statement);
         let s6_verifier = ChaumPedersenVerifier::new(s6_witness_statement);
@@ -171,14 +169,14 @@ impl AMFSPoK {
         let s8_witness_statement = ChaumPedersenWitnessStatement {
             u: m_public_key,
             v: E_M,
-            w: M_1,
+            w: M,
         };
         let s8_prover = ChaumPedersenProver::new(s8_witness_statement);
         let s8_verifier = ChaumPedersenVerifier::new(s8_witness_statement);
 
         // 13. [FIFTH CLAUSE] Initialize Schnorr for the statement J_2 = g^u
-        let s9_prover = SchnorrProver::new(J_2);
-        let s9_verifier = SchnorrVerifier::new(J_2);
+        let s9_prover = SchnorrProver::new(J);
+        let s9_verifier = SchnorrVerifier::new(J);
 
         // 14. Combine the Chaum-Pedersen and Schnorr proofs s2 and s3 into an OR proof or1
         let or4_prover = OrProver {
@@ -198,14 +196,14 @@ impl AMFSPoK {
         let s10_witness_statement = ChaumPedersenWitnessStatement {
             u: judge_public_key,
             v: E_J,
-            w: J_1,
+            w: J,
         };
         let s10_prover = ChaumPedersenProver::new(s10_witness_statement);
         let s10_verifier = ChaumPedersenVerifier::new(s10_witness_statement);
 
         // 16. [SIXTH CLAUSE] Initialize Schnorr for the statement M_2 = g^w
-        let s11_prover = SchnorrProver::new(M_2);
-        let s11_verifier = SchnorrVerifier::new(M_2);
+        let s11_prover = SchnorrProver::new(M);
+        let s11_verifier = SchnorrVerifier::new(M);
 
         // 17. Combine the Chaum-Pedersen and Schnorr proofs s2 and s3 into an OR proof or1
         let or5_prover = OrProver {

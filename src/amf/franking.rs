@@ -63,11 +63,9 @@ pub(crate) type AMFInternalSignature = FiatShamirSignature<
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct AMFSignature {
     pub pi: AMFInternalSignature,
-    pub J_1: RistrettoPoint,
-    pub J_2: RistrettoPoint,
+    pub J: RistrettoPoint,
     pub R: RistrettoPoint,
-    pub M_1: RistrettoPoint,
-    pub M_2: RistrettoPoint,
+    pub M: RistrettoPoint,
     pub E_J: RistrettoPoint,
     pub E_R: RistrettoPoint,
     pub E_M: RistrettoPoint,
@@ -95,20 +93,14 @@ pub fn frank(
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
-    // cf. Fig. 5 in [AMF]
 
     let alpha = Scalar::random(&mut rng);
     let beta = Scalar::random(&mut rng);
     let epsilon = Scalar::random(&mut rng);
-    let zeta = Scalar::random(&mut rng);
-    let iota = Scalar::random(&mut rng);
-    let kappa = Scalar::random(&mut rng);
 
-    let J_1 = alpha * judge_public_key.public_key;
-    let J_2 = iota * judge_public_key.public_key;
+    let J = alpha * judge_public_key.public_key;
     let R = beta * recipient_public_key.public_key;
-    let M_1 = epsilon * m_public_key.public_key;
-    let M_2 = kappa * m_public_key.public_key;
+    let M = epsilon * m_public_key.public_key;
     let E_J = alpha * g;
     let E_R = beta * g;
     let E_M = epsilon * g;
@@ -117,11 +109,9 @@ pub fn frank(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_M,
     );
@@ -164,11 +154,9 @@ pub fn frank(
     );
     AMFSignature {
         pi,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_R,
         E_M,
@@ -190,18 +178,13 @@ pub fn verify(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        amf_signature.J_1,
-        amf_signature.J_2,
+        amf_signature.J,
         amf_signature.R,
-        amf_signature.M_1,
-        amf_signature.M_2,
+        amf_signature.M,
         amf_signature.E_J,
         amf_signature.E_M,
     );
     let b2 = spok.verify(message, amf_signature.pi);
-
-    println!("b1: {}", b1);
-    println!("b2: {}", b2);
 
     b1 && b2
 }
@@ -215,17 +198,15 @@ pub fn j_judge(
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
-    let b1 = amf_signature.J_1 == judge_secret_key.secret_key * amf_signature.E_J;
+    let b1 = amf_signature.J == judge_secret_key.secret_key * amf_signature.E_J;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        amf_signature.J_1,
-        amf_signature.J_2,
+        amf_signature.J,
         amf_signature.R,
-        amf_signature.M_1,
-        amf_signature.M_2,
+        amf_signature.M,
         amf_signature.E_J,
         amf_signature.E_M,
     );
@@ -243,17 +224,15 @@ pub fn m_judge(
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
-    let b1 = amf_signature.M_1 == m_secret_key.secret_key * amf_signature.E_M;
+    let b1 = amf_signature.M == m_secret_key.secret_key * amf_signature.E_M;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        amf_signature.J_1,
-        amf_signature.J_2,
+        amf_signature.J,
         amf_signature.R,
-        amf_signature.M_1,
-        amf_signature.M_2,
+        amf_signature.M,
         amf_signature.E_J,
         amf_signature.E_M,
     );
@@ -271,33 +250,18 @@ pub fn forge(
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
-    // cf. Fig. 5 in [AMF]
 
-    // J_1
     let alpha = Scalar::random(&mut rng);
-    let gamma = Scalar::random(&mut rng);
-
-    // J_2
-    let lambda = Scalar::random(&mut rng);
-    let mu = Scalar::random(&mut rng);
-
-    // R_1
     let beta = Scalar::random(&mut rng);
-    let delta = Scalar::random(&mut rng);
-
-    // M_1
     let epsilon = Scalar::random(&mut rng);
+
+    let gamma = Scalar::random(&mut rng);
+    let delta = Scalar::random(&mut rng);
     let eta = Scalar::random(&mut rng);
 
-    // M_2
-    let kappa = Scalar::random(&mut rng);
-    let iota = Scalar::random(&mut rng);
-
-    let J_1 = gamma * g;
-    let J_2 = mu * g;
+    let J = gamma * g;
     let R = delta * g;
-    let M_1 = eta * g;
-    let M_2 = iota * g;
+    let M = eta * g;
     let E_J = alpha * g;
     let E_R = beta * g;
     let E_M = epsilon * g;
@@ -306,11 +270,9 @@ pub fn forge(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_M,
     );
@@ -340,12 +302,12 @@ pub fn forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(mu),
+                    s1_witness: Some(gamma),
                 },
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(iota),
+                    s1_witness: Some(eta),
                 },
             ),
         },
@@ -353,11 +315,9 @@ pub fn forge(
     );
     AMFSignature {
         pi,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_R,
         E_M,
@@ -373,35 +333,19 @@ pub fn r_forge(
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
-    // cf. Fig. 5 in [AMF]
 
-    // J_1
     let alpha = Scalar::random(&mut rng);
-    let gamma = Scalar::random(&mut rng);
-
-    // J_2
-    let lambda = Scalar::random(&mut rng);
-    let mu = Scalar::random(&mut rng);
-
-    // R_1
     let beta = Scalar::random(&mut rng);
-    let _delta = Scalar::random(&mut rng);
-
-    // M_1
     let epsilon = Scalar::random(&mut rng);
-    let eta = Scalar::random(&mut rng);
 
-    // M_2
-    let kappa = Scalar::random(&mut rng);
-    let iota = Scalar::random(&mut rng);
+    let gamma = Scalar::random(&mut rng);
+    let eta = Scalar::random(&mut rng);
 
     let recipient_public_key = recipient_secret_key.secret_key * g;
 
-    let J_1 = gamma * g;
-    let J_2 = mu * g;
+    let J = gamma * g;
     let R = beta * recipient_public_key;
-    let M_1 = eta * g;
-    let M_2 = iota * g;
+    let M = eta * g;
     let E_J = alpha * g;
     let E_R = beta * g;
     let E_M = epsilon * g;
@@ -410,11 +354,9 @@ pub fn r_forge(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key.public_key,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_M,
     );
@@ -444,12 +386,12 @@ pub fn r_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(mu),
+                    s1_witness: Some(gamma),
                 },
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(iota),
+                    s1_witness: Some(eta),
                 },
             ),
         },
@@ -457,11 +399,9 @@ pub fn r_forge(
     );
     AMFSignature {
         pi,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_R,
         E_M,
@@ -470,7 +410,7 @@ pub fn r_forge(
 
 pub fn m_forge(
     sender_public_key: AMFPublicKey,
-    recipient_public_key: AMFPublicKey,
+    _recipient_public_key: AMFPublicKey,
     m_secret_key: AMFSecretKey,
     judge_public_key: AMFPublicKey,
     message: &[u8],
@@ -479,33 +419,18 @@ pub fn m_forge(
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
 
-    // J_1
     let alpha = Scalar::random(&mut rng);
-    let gamma = Scalar::random(&mut rng);
-
-    // J_2
-    let lambda = Scalar::random(&mut rng);
-    let mu = Scalar::random(&mut rng);
-
-    // R_1
     let beta = Scalar::random(&mut rng);
-    let delta = Scalar::random(&mut rng);
-
-    // M_1
     let epsilon = Scalar::random(&mut rng);
-    let _eta = Scalar::random(&mut rng);
 
-    // M_2
-    let kappa = Scalar::random(&mut rng);
-    let _iota = Scalar::random(&mut rng);
+    let gamma = Scalar::random(&mut rng);
+    let delta = Scalar::random(&mut rng);
 
     let m_public_key = m_secret_key.secret_key * g;
 
-    let J_1 = gamma * g;
-    let J_2 = mu * g;
+    let J = gamma * g;
     let R = delta * g;
-    let M_1 = epsilon * m_public_key;
-    let M_2 = kappa * m_public_key;
+    let M = epsilon * m_public_key;
     let E_J = alpha * g;
     let E_R = beta * g;
     let E_M = epsilon * g;
@@ -514,11 +439,9 @@ pub fn m_forge(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_M,
     );
@@ -553,7 +476,7 @@ pub fn m_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(kappa * m_secret_key.secret_key),
+                    s1_witness: Some(epsilon * m_secret_key.secret_key),
                 },
             ),
         },
@@ -561,11 +484,9 @@ pub fn m_forge(
     );
     AMFSignature {
         pi,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_R,
         E_M,
@@ -574,42 +495,26 @@ pub fn m_forge(
 
 pub fn j_forge(
     sender_public_key: AMFPublicKey,
-    recipient_public_key: AMFPublicKey,
+    _recipient_public_key: AMFPublicKey,
     judge_secret_key: AMFSecretKey,
     m_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
-    // cf. Fig. 5 in [AMF]
 
-    // J_1
     let alpha = Scalar::random(&mut rng);
-    let _gamma = Scalar::random(&mut rng);
-
-    // J_2
-    let lambda = Scalar::random(&mut rng);
-    let _mu = Scalar::random(&mut rng);
-
-    // R_1
     let beta = Scalar::random(&mut rng);
-    let delta = Scalar::random(&mut rng);
-
-    // M_1
     let epsilon = Scalar::random(&mut rng);
-    let eta = Scalar::random(&mut rng);
 
-    // M_2
-    let kappa = Scalar::random(&mut rng);
-    let iota = Scalar::random(&mut rng);
+    let delta = Scalar::random(&mut rng);
+    let eta = Scalar::random(&mut rng);
 
     let judge_public_key = judge_secret_key.secret_key * g;
 
-    let J_1 = alpha * judge_public_key;
-    let J_2 = lambda * judge_public_key;
+    let J = alpha * judge_public_key;
     let R = delta * g;
-    let M_1 = eta * g;
-    let M_2 = iota * g;
+    let M = eta * g;
     let E_J = alpha * g;
     let E_R = beta * g;
     let E_M = epsilon * g;
@@ -618,11 +523,9 @@ pub fn j_forge(
         sender_public_key.public_key,
         judge_public_key,
         m_public_key.public_key,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_M,
     );
@@ -652,12 +555,12 @@ pub fn j_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(lambda * judge_secret_key.secret_key),
+                    s1_witness: Some(alpha * judge_secret_key.secret_key),
                 },
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(iota),
+                    s1_witness: Some(eta),
                 },
             ),
         },
@@ -665,11 +568,9 @@ pub fn j_forge(
     );
     AMFSignature {
         pi,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_R,
         E_M,
@@ -685,36 +586,19 @@ pub fn j_r_forge(
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
-    // cf. Fig. 5 in [AMF]
 
-    // J_1
     let alpha = Scalar::random(&mut rng);
-    let _gamma = Scalar::random(&mut rng);
-
-    // J_2
-    let lambda = Scalar::random(&mut rng);
-    let _mu = Scalar::random(&mut rng);
-
-    // R_1
     let beta = Scalar::random(&mut rng);
-    let _delta = Scalar::random(&mut rng);
-
-    // M_1
     let epsilon = Scalar::random(&mut rng);
-    let eta = Scalar::random(&mut rng);
 
-    // M_2
-    let kappa = Scalar::random(&mut rng);
-    let iota = Scalar::random(&mut rng);
+    let eta = Scalar::random(&mut rng);
 
     let judge_public_key = judge_secret_key.secret_key * g;
     let recipient_public_key = recipient_secret_key.secret_key * g;
 
-    let J_1 = alpha * judge_public_key;
-    let J_2 = lambda * judge_public_key;
+    let J = alpha * judge_public_key;
     let R = beta * recipient_public_key;
-    let M_1 = eta * g;
-    let M_2 = iota * g;
+    let M = eta * g;
     let E_J = alpha * g;
     let E_R = beta * g;
     let E_M = epsilon * g;
@@ -723,11 +607,9 @@ pub fn j_r_forge(
         sender_public_key.public_key,
         judge_public_key,
         m_public_key.public_key,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_M,
     );
@@ -757,12 +639,12 @@ pub fn j_r_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(lambda * judge_secret_key.secret_key),
+                    s1_witness: Some(alpha * judge_secret_key.secret_key),
                 },
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(iota),
+                    s1_witness: Some(eta),
                 },
             ),
         },
@@ -770,11 +652,9 @@ pub fn j_r_forge(
     );
     AMFSignature {
         pi,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_R,
         E_M,
@@ -790,36 +670,19 @@ pub fn m_r_forge(
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
-    // cf. Fig. 5 in [AMF]
 
-    // J_1
     let alpha = Scalar::random(&mut rng);
-    let gamma = Scalar::random(&mut rng);
-
-    // J_2
-    let lambda = Scalar::random(&mut rng);
-    let mu = Scalar::random(&mut rng);
-
-    // R_1
     let beta = Scalar::random(&mut rng);
-    let _delta = Scalar::random(&mut rng);
-
-    // M_1
     let epsilon = Scalar::random(&mut rng);
-    let _eta = Scalar::random(&mut rng);
 
-    // M_2
-    let kappa = Scalar::random(&mut rng);
-    let _iota = Scalar::random(&mut rng);
+    let gamma = Scalar::random(&mut rng);
 
     let m_public_key = m_secret_key.secret_key * g;
     let recipient_public_key = recipient_secret_key.secret_key * g;
 
-    let J_1 = gamma * g;
-    let J_2 = mu * g;
+    let J = gamma * g;
     let R = beta * recipient_public_key;
-    let M_1 = epsilon * m_public_key;
-    let M_2 = kappa * m_public_key;
+    let M = epsilon * m_public_key;
     let E_J = alpha * g;
     let E_R = beta * g;
     let E_M = epsilon * g;
@@ -828,11 +691,9 @@ pub fn m_r_forge(
         sender_public_key.public_key,
         judge_public_key.public_key,
         m_public_key,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_M,
     );
@@ -862,12 +723,12 @@ pub fn m_r_forge(
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(mu),
+                    s1_witness: Some(gamma),
                 },
                 OrWitness {
                     b: true,
                     s0_witness: None,
-                    s1_witness: Some(kappa * m_secret_key.secret_key),
+                    s1_witness: Some(epsilon * m_secret_key.secret_key),
                 },
             ),
         },
@@ -875,11 +736,9 @@ pub fn m_r_forge(
     );
     AMFSignature {
         pi,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_R,
         E_M,
@@ -895,36 +754,17 @@ pub fn j_m_forge(
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
-    // cf. Fig. 5 in [AMF]
 
-    // J_1
     let alpha = Scalar::random(&mut rng);
-    let _gamma = Scalar::random(&mut rng);
-
-    // J_2
-    let lambda = Scalar::random(&mut rng);
-    let _mu = Scalar::random(&mut rng);
-
-    // R
     let beta = Scalar::random(&mut rng);
-    let _delta = Scalar::random(&mut rng);
-
-    // M_1
     let epsilon = Scalar::random(&mut rng);
-    let _eta = Scalar::random(&mut rng);
-
-    // M_2
-    let kappa = Scalar::random(&mut rng);
-    let _iota = Scalar::random(&mut rng);
 
     let judge_public_key = judge_secret_key.secret_key * g;
     let m_public_key = m_secret_key.secret_key * g;
 
-    let J_1 = alpha * judge_public_key;
-    let J_2 = lambda * judge_public_key;
+    let J = alpha * judge_public_key;
     let R = beta * recipient_public_key.public_key;
-    let M_1 = epsilon * m_public_key;
-    let M_2 = kappa * m_public_key;
+    let M = epsilon * m_public_key;
     let E_J = alpha * g;
     let E_R = beta * g;
     let E_M = epsilon * g;
@@ -933,11 +773,9 @@ pub fn j_m_forge(
         sender_public_key.public_key,
         judge_public_key,
         m_public_key,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_M,
     );
@@ -980,11 +818,9 @@ pub fn j_m_forge(
     );
     AMFSignature {
         pi,
-        J_1,
-        J_2,
+        J,
         R,
-        M_1,
-        M_2,
+        M,
         E_J,
         E_R,
         E_M,
@@ -1115,11 +951,9 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J_1,
-            amf_signature.J_2,
+            amf_signature.J,
             amf_signature.R,
-            amf_signature.M_1,
-            amf_signature.M_2,
+            amf_signature.M,
             amf_signature.E_J,
             amf_signature.E_M,
         );
@@ -1186,11 +1020,9 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J_1,
-            amf_signature.J_2,
+            amf_signature.J,
             amf_signature.R,
-            amf_signature.M_1,
-            amf_signature.M_2,
+            amf_signature.M,
             amf_signature.E_J,
             amf_signature.E_M,
         );
@@ -1256,11 +1088,9 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J_1,
-            amf_signature.J_2,
+            amf_signature.J,
             amf_signature.R,
-            amf_signature.M_1,
-            amf_signature.M_2,
+            amf_signature.M,
             amf_signature.E_J,
             amf_signature.E_M,
         );
@@ -1326,11 +1156,9 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J_1,
-            amf_signature.J_2,
+            amf_signature.J,
             amf_signature.R,
-            amf_signature.M_1,
-            amf_signature.M_2,
+            amf_signature.M,
             amf_signature.E_J,
             amf_signature.E_M,
         );
@@ -1396,11 +1224,9 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J_1,
-            amf_signature.J_2,
+            amf_signature.J,
             amf_signature.R,
-            amf_signature.M_1,
-            amf_signature.M_2,
+            amf_signature.M,
             amf_signature.E_J,
             amf_signature.E_M,
         );
@@ -1466,11 +1292,9 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J_1,
-            amf_signature.J_2,
+            amf_signature.J,
             amf_signature.R,
-            amf_signature.M_1,
-            amf_signature.M_2,
+            amf_signature.M,
             amf_signature.E_J,
             amf_signature.E_M,
         );
@@ -1536,11 +1360,9 @@ mod tests {
             sender_public_key.public_key,
             judge_public_key.public_key,
             m_public_key.public_key,
-            amf_signature.J_1,
-            amf_signature.J_2,
+            amf_signature.J,
             amf_signature.R,
-            amf_signature.M_1,
-            amf_signature.M_2,
+            amf_signature.M,
             amf_signature.E_J,
             amf_signature.E_M,
         );
