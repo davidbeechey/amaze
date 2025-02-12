@@ -314,12 +314,10 @@ pub struct SerializableAMFSignature {
     R_2: SerializableRistrettoPoint,
     M_1: SerializableRistrettoPoint,
     M_2: SerializableRistrettoPoint,
-    E_J_1: SerializableRistrettoPoint,
-    E_J_2: SerializableRistrettoPoint,
+    E_J: SerializableRistrettoPoint,
     E_R_1: SerializableRistrettoPoint,
     E_R_2: SerializableRistrettoPoint,
-    E_M_1: SerializableRistrettoPoint,
-    E_M_2: SerializableRistrettoPoint,
+    E_M: SerializableRistrettoPoint,
 }
 impl From<AMFSignature> for SerializableAMFSignature {
     fn from(amf_signature: AMFSignature) -> Self {
@@ -331,12 +329,10 @@ impl From<AMFSignature> for SerializableAMFSignature {
             R_2: amf_signature.R_2.into(),
             M_1: amf_signature.M_1.into(),
             M_2: amf_signature.M_2.into(),
-            E_J_1: amf_signature.E_J_1.into(),
-            E_J_2: amf_signature.E_J_2.into(),
+            E_J: amf_signature.E_J.into(),
             E_R_1: amf_signature.E_R_1.into(),
             E_R_2: amf_signature.E_R_2.into(),
-            E_M_1: amf_signature.E_M_1.into(),
-            E_M_2: amf_signature.E_M_2.into(),
+            E_M: amf_signature.E_M.into(),
         }
     }
 }
@@ -350,12 +346,10 @@ impl From<SerializableAMFSignature> for AMFSignature {
             R_2: serialized_amf_signature.R_2.into(),
             M_1: serialized_amf_signature.M_1.into(),
             M_2: serialized_amf_signature.M_2.into(),
-            E_J_1: serialized_amf_signature.E_J_1.into(),
-            E_J_2: serialized_amf_signature.E_J_2.into(),
+            E_J: serialized_amf_signature.E_J.into(),
             E_R_1: serialized_amf_signature.E_R_1.into(),
             E_R_2: serialized_amf_signature.E_R_2.into(),
-            E_M_1: serialized_amf_signature.E_M_1.into(),
-            E_M_2: serialized_amf_signature.E_M_2.into(),
+            E_M: serialized_amf_signature.E_M.into(),
         }
     }
 }

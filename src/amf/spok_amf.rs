@@ -67,10 +67,8 @@ impl AMFSPoK {
         R_2: RistrettoPoint,
         M_1: RistrettoPoint,
         M_2: RistrettoPoint,
-        E_J_1: RistrettoPoint,
-        _E_J_2: RistrettoPoint,
-        E_M_1: RistrettoPoint,
-        _E_M_2: RistrettoPoint,
+        E_J: RistrettoPoint,
+        E_M: RistrettoPoint,
     ) -> Self {
         // 0. [FIRST CLAUSE] Initialize Schnorr for the statement sender_public_key = g^t
         let s0_prover = SchnorrProver::new(sender_public_key);
@@ -97,7 +95,7 @@ impl AMFSPoK {
         // 3. [SECOND CLAUSE] Initialize Chaum-Pedersen for the statement (J_1 = judge_public_key^v && E_j_1 = g^v)
         let s3_witness_statement = ChaumPedersenWitnessStatement {
             u: judge_public_key,
-            v: E_J_1,
+            v: E_J,
             w: J_1,
         };
         let s2_prover = ChaumPedersenProver::new(s3_witness_statement);
@@ -146,7 +144,7 @@ impl AMFSPoK {
         // 9. [FOURTH CLAUSE] Initialize Chaum-Pedersen for the statement (M_1 = m_public_key^y && E_m_1 = g^y)
         let s6_witness_statement = ChaumPedersenWitnessStatement {
             u: m_public_key,
-            v: E_M_1,
+            v: E_M,
             w: M_1,
         };
         let s6_prover = ChaumPedersenProver::new(s6_witness_statement);
@@ -173,7 +171,7 @@ impl AMFSPoK {
         // 12. [FIFTH CLAUSE] Initialise Chaum-Pedersen for the statement (M_1 = m_public_key^y && E_m_1 = g^y)
         let s8_witness_statement = ChaumPedersenWitnessStatement {
             u: m_public_key,
-            v: E_M_1,
+            v: E_M,
             w: M_1,
         };
         let s8_prover = ChaumPedersenProver::new(s8_witness_statement);
@@ -200,7 +198,7 @@ impl AMFSPoK {
         // 15. [SIXTH CLAUSE] Initialize Chaum-Pedersen for the statement (J_1 = judge_public_key^v && E_j_1 = g^v)
         let s10_witness_statement = ChaumPedersenWitnessStatement {
             u: judge_public_key,
-            v: E_J_1,
+            v: E_J,
             w: J_1,
         };
         let s10_prover = ChaumPedersenProver::new(s10_witness_statement);

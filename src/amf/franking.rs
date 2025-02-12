@@ -69,12 +69,10 @@ pub struct AMFSignature {
     pub R_2: RistrettoPoint,
     pub M_1: RistrettoPoint,
     pub M_2: RistrettoPoint,
-    pub E_J_1: RistrettoPoint,
-    pub E_J_2: RistrettoPoint,
+    pub E_J: RistrettoPoint,
     pub E_R_1: RistrettoPoint,
     pub E_R_2: RistrettoPoint,
-    pub E_M_1: RistrettoPoint,
-    pub E_M_2: RistrettoPoint,
+    pub E_M: RistrettoPoint,
 }
 
 pub fn keygen(role: AMFRole) -> (AMFPublicKey, AMFSecretKey) {
@@ -114,12 +112,10 @@ pub fn frank(
     let R_2 = zeta * recipient_public_key.public_key;
     let M_1 = epsilon * m_public_key.public_key;
     let M_2 = kappa * m_public_key.public_key;
-    let E_J_1 = alpha * g;
-    let E_J_2 = iota * g;
+    let E_J = alpha * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M_1 = epsilon * g;
-    let E_M_2 = kappa * g;
+    let E_M = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -131,10 +127,8 @@ pub fn frank(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
-        E_M_1,
-        E_M_2,
+        E_J,
+        E_M,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -181,12 +175,10 @@ pub fn frank(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
+        E_J,
         E_R_1,
         E_R_2,
-        E_M_1,
-        E_M_2,
+        E_M,
     }
 }
 
@@ -214,10 +206,8 @@ pub fn verify(
         amf_signature.R_2,
         amf_signature.M_1,
         amf_signature.M_2,
-        amf_signature.E_J_1,
-        amf_signature.E_J_2,
-        amf_signature.E_M_1,
-        amf_signature.E_M_2,
+        amf_signature.E_J,
+        amf_signature.E_M,
     );
     let b3 = spok.verify(message, amf_signature.pi);
 
@@ -237,10 +227,7 @@ pub fn j_judge(
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
-    // b1 is proof that the sender sent the message
-    let b1 = amf_signature.J_1 == judge_secret_key.secret_key * amf_signature.E_J_1;
-    // b2 is proof that M will also be able to judge
-    let b2 = amf_signature.J_2 == judge_secret_key.secret_key * amf_signature.E_J_2;
+    let b1 = amf_signature.J_1 == judge_secret_key.secret_key * amf_signature.E_J;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -252,14 +239,12 @@ pub fn j_judge(
         amf_signature.R_2,
         amf_signature.M_1,
         amf_signature.M_2,
-        amf_signature.E_J_1,
-        amf_signature.E_J_2,
-        amf_signature.E_M_1,
-        amf_signature.E_M_2,
+        amf_signature.E_J,
+        amf_signature.E_M,
     );
-    let b3 = spok.verify(message, amf_signature.pi);
+    let b2 = spok.verify(message, amf_signature.pi);
 
-    b1 && b2 && b3
+    b1 && b2
 }
 
 pub fn m_judge(
@@ -271,10 +256,7 @@ pub fn m_judge(
     message: &[u8],
     amf_signature: AMFSignature,
 ) -> bool {
-    // b1 is proof that the sender sent the message
-    let b1 = amf_signature.M_1 == m_secret_key.secret_key * amf_signature.E_M_1;
-    // b2 is proof that J will also be able to judge
-    let b2 = amf_signature.M_2 == m_secret_key.secret_key * amf_signature.E_M_2;
+    let b1 = amf_signature.M_1 == m_secret_key.secret_key * amf_signature.E_M;
 
     let spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -286,14 +268,12 @@ pub fn m_judge(
         amf_signature.R_2,
         amf_signature.M_1,
         amf_signature.M_2,
-        amf_signature.E_J_1,
-        amf_signature.E_J_2,
-        amf_signature.E_M_1,
-        amf_signature.E_M_2,
+        amf_signature.E_J,
+        amf_signature.E_M,
     );
-    let b3 = spok.verify(message, amf_signature.pi);
+    let b2 = spok.verify(message, amf_signature.pi);
 
-    b1 && b2 && b3
+    b1 && b2
 }
 
 pub fn forge(
@@ -337,12 +317,10 @@ pub fn forge(
     let R_2 = theta * g;
     let M_1 = eta * g;
     let M_2 = iota * g;
-    let E_J_1 = alpha * g;
-    let E_J_2 = lambda * g;
+    let E_J = alpha * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M_1 = epsilon * g;
-    let E_M_2 = kappa * g;
+    let E_M = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -354,10 +332,8 @@ pub fn forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
-        E_M_1,
-        E_M_2,
+        E_J,
+        E_M,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -404,12 +380,10 @@ pub fn forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
+        E_J,
         E_R_1,
         E_R_2,
-        E_M_1,
-        E_M_2,
+        E_M,
     }
 }
 
@@ -456,12 +430,10 @@ pub fn r_forge(
     let R_2 = zeta * recipient_public_key;
     let M_1 = eta * g;
     let M_2 = iota * g;
-    let E_J_1 = alpha * g;
-    let E_J_2 = lambda * g;
+    let E_J = alpha * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M_1 = epsilon * g;
-    let E_M_2 = kappa * g;
+    let E_M = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -473,10 +445,8 @@ pub fn r_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
-        E_M_1,
-        E_M_2,
+        E_J,
+        E_M,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -523,12 +493,10 @@ pub fn r_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
+        E_J,
         E_R_1,
         E_R_2,
-        E_M_1,
-        E_M_2,
+        E_M,
     }
 }
 
@@ -575,12 +543,10 @@ pub fn m_forge(
     let R_2 = zeta * recipient_public_key.public_key;
     let M_1 = epsilon * m_public_key;
     let M_2 = kappa * m_public_key;
-    let E_J_1 = alpha * g;
-    let E_J_2 = lambda * g;
+    let E_J = alpha * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M_1 = epsilon * g;
-    let E_M_2 = kappa * g;
+    let E_M = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -592,10 +558,8 @@ pub fn m_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
-        E_M_1,
-        E_M_2,
+        E_J,
+        E_M,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -642,12 +606,10 @@ pub fn m_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
+        E_J,
         E_R_1,
         E_R_2,
-        E_M_1,
-        E_M_2,
+        E_M,
     }
 }
 
@@ -694,12 +656,10 @@ pub fn j_forge(
     let R_2 = theta * g;
     let M_1 = eta * g;
     let M_2 = iota * g;
-    let E_J_1 = alpha * g;
-    let E_J_2 = lambda * g;
+    let E_J = alpha * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M_1 = epsilon * g;
-    let E_M_2 = kappa * g;
+    let E_M = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -711,10 +671,8 @@ pub fn j_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
-        E_M_1,
-        E_M_2,
+        E_J,
+        E_M,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -761,12 +719,10 @@ pub fn j_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
+        E_J,
         E_R_1,
         E_R_2,
-        E_M_1,
-        E_M_2,
+        E_M,
     }
 }
 
@@ -814,12 +770,10 @@ pub fn j_r_forge(
     let R_2 = zeta * recipient_public_key;
     let M_1 = eta * g;
     let M_2 = iota * g;
-    let E_J_1 = alpha * g;
-    let E_J_2 = lambda * g;
+    let E_J = alpha * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M_1 = epsilon * g;
-    let E_M_2 = kappa * g;
+    let E_M = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -831,10 +785,8 @@ pub fn j_r_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
-        E_M_1,
-        E_M_2,
+        E_J,
+        E_M,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -881,12 +833,10 @@ pub fn j_r_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
+        E_J,
         E_R_1,
         E_R_2,
-        E_M_1,
-        E_M_2,
+        E_M,
     }
 }
 
@@ -934,12 +884,10 @@ pub fn m_r_forge(
     let R_2 = zeta * recipient_public_key;
     let M_1 = epsilon * m_public_key;
     let M_2 = kappa * m_public_key;
-    let E_J_1 = alpha * g;
-    let E_J_2 = lambda * g;
+    let E_J = alpha * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M_1 = epsilon * g;
-    let E_M_2 = kappa * g;
+    let E_M = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -951,10 +899,8 @@ pub fn m_r_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
-        E_M_1,
-        E_M_2,
+        E_J,
+        E_M,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -1001,12 +947,10 @@ pub fn m_r_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
+        E_J,
         E_R_1,
         E_R_2,
-        E_M_1,
-        E_M_2,
+        E_M,
     }
 }
 
@@ -1054,12 +998,10 @@ pub fn j_m_forge(
     let R_2 = zeta * recipient_public_key.public_key;
     let M_1 = epsilon * m_public_key;
     let M_2 = kappa * m_public_key;
-    let E_J_1 = alpha * g;
-    let E_J_2 = lambda * g;
+    let E_J = alpha * g;
     let E_R_1 = beta * g;
     let E_R_2 = zeta * g;
-    let E_M_1 = epsilon * g;
-    let E_M_2 = kappa * g;
+    let E_M = epsilon * g;
 
     let mut spok = AMFSPoK::new(
         sender_public_key.public_key,
@@ -1071,10 +1013,8 @@ pub fn j_m_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
-        E_M_1,
-        E_M_2,
+        E_J,
+        E_M,
     );
     let pi = spok.sign(
         FiatShamirSecretKey {
@@ -1121,12 +1061,10 @@ pub fn j_m_forge(
         R_2,
         M_1,
         M_2,
-        E_J_1,
-        E_J_2,
+        E_J,
         E_R_1,
         E_R_2,
-        E_M_1,
-        E_M_2,
+        E_M,
     }
 }
 
@@ -1260,10 +1198,8 @@ mod tests {
             amf_signature.R_2,
             amf_signature.M_1,
             amf_signature.M_2,
-            amf_signature.E_J_1,
-            amf_signature.E_J_2,
-            amf_signature.E_M_1,
-            amf_signature.E_M_2,
+            amf_signature.E_J,
+            amf_signature.E_M,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1334,10 +1270,8 @@ mod tests {
             amf_signature.R_2,
             amf_signature.M_1,
             amf_signature.M_2,
-            amf_signature.E_J_1,
-            amf_signature.E_J_2,
-            amf_signature.E_M_1,
-            amf_signature.E_M_2,
+            amf_signature.E_J,
+            amf_signature.E_M,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1407,10 +1341,8 @@ mod tests {
             amf_signature.R_2,
             amf_signature.M_1,
             amf_signature.M_2,
-            amf_signature.E_J_1,
-            amf_signature.E_J_2,
-            amf_signature.E_M_1,
-            amf_signature.E_M_2,
+            amf_signature.E_J,
+            amf_signature.E_M,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1480,10 +1412,8 @@ mod tests {
             amf_signature.R_2,
             amf_signature.M_1,
             amf_signature.M_2,
-            amf_signature.E_J_1,
-            amf_signature.E_J_2,
-            amf_signature.E_M_1,
-            amf_signature.E_M_2,
+            amf_signature.E_J,
+            amf_signature.E_M,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1553,10 +1483,8 @@ mod tests {
             amf_signature.R_2,
             amf_signature.M_1,
             amf_signature.M_2,
-            amf_signature.E_J_1,
-            amf_signature.E_J_2,
-            amf_signature.E_M_1,
-            amf_signature.E_M_2,
+            amf_signature.E_J,
+            amf_signature.E_M,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1626,10 +1554,8 @@ mod tests {
             amf_signature.R_2,
             amf_signature.M_1,
             amf_signature.M_2,
-            amf_signature.E_J_1,
-            amf_signature.E_J_2,
-            amf_signature.E_M_1,
-            amf_signature.E_M_2,
+            amf_signature.E_J,
+            amf_signature.E_M,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
@@ -1699,10 +1625,8 @@ mod tests {
             amf_signature.R_2,
             amf_signature.M_1,
             amf_signature.M_2,
-            amf_signature.E_J_1,
-            amf_signature.E_J_2,
-            amf_signature.E_M_1,
-            amf_signature.E_M_2,
+            amf_signature.E_J,
+            amf_signature.E_M,
         );
         assert!(spok.verify(message, amf_signature.pi));
     }
