@@ -63,8 +63,7 @@ impl AMFSPoK {
         m_public_key: RistrettoPoint,
         J_1: RistrettoPoint,
         J_2: RistrettoPoint,
-        R_1: RistrettoPoint,
-        R_2: RistrettoPoint,
+        R: RistrettoPoint,
         M_1: RistrettoPoint,
         M_2: RistrettoPoint,
         E_J: RistrettoPoint,
@@ -102,8 +101,8 @@ impl AMFSPoK {
         let s2_verifier = ChaumPedersenVerifier::new(s3_witness_statement);
 
         // 4. [SECOND CLAUSE] Initialize Schnorr for the statement R_1 = g^w
-        let s3_prover = SchnorrProver::new(R_1);
-        let s3_verifier = SchnorrVerifier::new(R_1);
+        let s3_prover = SchnorrProver::new(R);
+        let s3_verifier = SchnorrVerifier::new(R);
 
         // 5. Combine the Chaum-Pedersen and Schnorr proofs s2 and s3 into an OR proof or1
         let or1_prover = OrProver {
@@ -151,8 +150,8 @@ impl AMFSPoK {
         let s6_verifier = ChaumPedersenVerifier::new(s6_witness_statement);
 
         // 10. [FOURTH CLAUSE] Initialize Schnorr for the statement R_2 = g^w
-        let s7_prover = SchnorrProver::new(R_2);
-        let s7_verifier = SchnorrVerifier::new(R_2);
+        let s7_prover = SchnorrProver::new(R);
+        let s7_verifier = SchnorrVerifier::new(R);
 
         // 11. Combine the Chaum-Pedersen and Schnorr proofs s2 and s3 into an OR proof or1
         let or3_prover = OrProver {
