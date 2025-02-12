@@ -72,6 +72,19 @@ pub struct AMFSignature {
     pub E_SP: RistrettoPoint,
 }
 
+fn generate_greek_letters() -> (Scalar, Scalar, Scalar, Scalar, Scalar, Scalar) {
+    let mut rng = rand::thread_rng();
+
+    let alpha = Scalar::random(&mut rng);
+    let beta = Scalar::random(&mut rng);
+    let epsilon = Scalar::random(&mut rng);
+    let gamma = Scalar::random(&mut rng);
+    let delta = Scalar::random(&mut rng);
+    let eta = Scalar::random(&mut rng);
+
+    (alpha, beta, epsilon, gamma, delta, eta)
+}
+
 pub fn keygen(role: AMFRole) -> (AMFPublicKey, AMFSecretKey) {
     // cf. Fig. 5 in [AMF]
     let mut rng = rand::thread_rng();
@@ -92,12 +105,9 @@ pub fn frank(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
+    let (alpha, beta, epsilon, _, _, _) = generate_greek_letters();
 
     let RP = alpha * rp_public_key.public_key;
     let R = beta * recipient_public_key.public_key;
@@ -249,16 +259,9 @@ pub fn forge(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
-
-    let gamma = Scalar::random(&mut rng);
-    let delta = Scalar::random(&mut rng);
-    let eta = Scalar::random(&mut rng);
+    let (alpha, beta, epsilon, gamma, delta, eta) = generate_greek_letters();
 
     let RP = gamma * g;
     let R = delta * g;
@@ -332,15 +335,9 @@ pub fn r_forge(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
-
-    let gamma = Scalar::random(&mut rng);
-    let eta = Scalar::random(&mut rng);
+    let (alpha, beta, epsilon, gamma, _, eta) = generate_greek_letters();
 
     let recipient_public_key = recipient_secret_key.secret_key * g;
 
@@ -416,16 +413,9 @@ pub fn m_forge(
     rp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
-    // cf. Fig. 5 in [AMF]
 
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
-
-    let gamma = Scalar::random(&mut rng);
-    let delta = Scalar::random(&mut rng);
+    let (alpha, beta, epsilon, gamma, delta, _) = generate_greek_letters();
 
     let sp_public_key = sp_secret_key.secret_key * g;
 
@@ -501,15 +491,9 @@ pub fn rp_forge(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
-
-    let delta = Scalar::random(&mut rng);
-    let eta = Scalar::random(&mut rng);
+    let (alpha, beta, epsilon, _, delta, eta) = generate_greek_letters();
 
     let rp_public_key = rp_secret_key.secret_key * g;
 
@@ -585,14 +569,9 @@ pub fn rp_r_forge(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
-
-    let eta = Scalar::random(&mut rng);
+    let (alpha, beta, epsilon, _, _, eta) = generate_greek_letters();
 
     let rp_public_key = rp_secret_key.secret_key * g;
     let recipient_public_key = recipient_secret_key.secret_key * g;
@@ -669,14 +648,9 @@ pub fn sp_r_forge(
     rp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
-
-    let gamma = Scalar::random(&mut rng);
+    let (alpha, beta, epsilon, gamma, _, _) = generate_greek_letters();
 
     let sp_public_key = sp_secret_key.secret_key * g;
     let recipient_public_key = recipient_secret_key.secret_key * g;
@@ -753,12 +727,9 @@ pub fn rp_sp_forge(
     sp_secret_key: AMFSecretKey,
     message: &[u8],
 ) -> AMFSignature {
-    let mut rng = rand::thread_rng();
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
+    let (alpha, beta, epsilon, _, _, _) = generate_greek_letters();
 
     let rp_public_key = rp_secret_key.secret_key * g;
     let sp_public_key = sp_secret_key.secret_key * g;
