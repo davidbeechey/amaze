@@ -2,17 +2,17 @@ use amaze::amf::two_franking::*;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("amf");
-    group.significance_level(0.1).sample_size(1000);
+    let mut group = c.benchmark_group("amf_two_franking");
+    group.significance_level(0.1).sample_size(100_000);
 
     // 0. Initialize a Sender
     let (sender_public_key, sender_secret_key) = keygen(AMFRole::Sender);
     // 1. Initialize a Recipient
     let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
     // 2. Initialize a Sender Platform's Judge
-    let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
+    let (rp_public_key, rp_secret_key) = keygen(AMFRole::Judge);
     // 3. Initialize a Recipient Platform's Judge
-    let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
+    let (sp_public_key, sp_secret_key) = keygen(AMFRole::Judge);
 
     // 3. Initialize a message
     let message = b"hello world!";
