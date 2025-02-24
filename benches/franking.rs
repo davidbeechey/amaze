@@ -2,8 +2,8 @@ use amaze::amf::{franking::*, AMFRole};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("amf");
-    group.significance_level(0.1).sample_size(1000);
+    let mut group = c.benchmark_group("new_amf");
+    group.significance_level(0.1).sample_size(100_000);
 
     // 0. Initialize a Sender
     let (sender_public_key, sender_secret_key) = keygen(AMFRole::Sender);
