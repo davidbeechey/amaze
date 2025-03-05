@@ -1002,7 +1002,7 @@ mod tests {
     }
 
     #[test]
-    fn test_j_forge() {
+    fn test_rp_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
         let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
@@ -1070,7 +1070,7 @@ mod tests {
     }
 
     #[test]
-    fn test_m_forge() {
+    fn test_sp_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
         let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
@@ -1138,7 +1138,7 @@ mod tests {
     }
 
     #[test]
-    fn test_j_r_forge() {
+    fn test_rp_r_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
         let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
@@ -1206,7 +1206,7 @@ mod tests {
     }
 
     #[test]
-    fn test_m_r_forge() {
+    fn test_sp_r_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
         let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
@@ -1274,7 +1274,7 @@ mod tests {
     }
 
     #[test]
-    fn test_j_m_forge() {
+    fn test_rp_sp_forge() {
         let (sender_public_key, _sender_secret_key) = keygen(AMFRole::Sender);
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
         let (rp_public_key, rp_secret_key) = keygen(AMFRole::ReceiverPlatformJudge);
