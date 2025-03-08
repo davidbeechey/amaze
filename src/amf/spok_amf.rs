@@ -25,7 +25,6 @@ pub type AMFSPoK = FiatShamir<
         OrWitness<Scalar, Scalar>,
         OrWitness<Scalar, Scalar>,
         OrWitness<Scalar, Scalar>,
-        OrWitness<Scalar, Scalar>,
     ),
     (
         // sender_public_key = g^t and J = g^u (cf. Fig 5 of [AMF])
@@ -36,7 +35,6 @@ pub type AMFSPoK = FiatShamir<
         (RistrettoPoint, RistrettoPoint),
         (ChaumPedersenWitnessStatement, RistrettoPoint),
         (ChaumPedersenWitnessStatement, RistrettoPoint),
-        (ChaumPedersenWitnessStatement, RistrettoPoint),
     ),
     (
         (RistrettoPoint, RistrettoPoint),
@@ -44,10 +42,8 @@ pub type AMFSPoK = FiatShamir<
         (RistrettoPoint, RistrettoPoint),
         (ChaumPedersenProverCommitment, RistrettoPoint),
         (ChaumPedersenProverCommitment, RistrettoPoint),
-        (ChaumPedersenProverCommitment, RistrettoPoint),
     ),
     (
-        OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
@@ -192,33 +188,6 @@ impl AMFSPoK {
             s1_verifier: Box::new(s9_verifier),
         };
 
-        // 15. [SIXTH CLAUSE] Initialize Chaum-Pedersen for the statement (J_1 = rp_public_key^v && E_j_1 = g^v)
-        let s10_witness_statement = ChaumPedersenWitnessStatement {
-            u: rp_public_key,
-            v: E_RP,
-            w: RP,
-        };
-        let s10_prover = ChaumPedersenProver::new(s10_witness_statement);
-        let s10_verifier = ChaumPedersenVerifier::new(s10_witness_statement);
-
-        // 16. [SIXTH CLAUSE] Initialize Schnorr for the statement M_2 = g^w
-        let s11_prover = SchnorrProver::new(SP);
-        let s11_verifier = SchnorrVerifier::new(SP);
-
-        // 17. Combine the Chaum-Pedersen and Schnorr proofs s2 and s3 into an OR proof or1
-        let or5_prover = OrProver {
-            s0_prover: Box::new(s10_prover),
-            s0_verifier: Box::new(s10_verifier),
-            s1_prover: Box::new(s11_prover),
-            s1_verifier: Box::new(s11_verifier),
-            witness: None,
-            per_verifier_secret: None,
-        };
-        let or5_verifier = OrVerifier {
-            s0_verifier: Box::new(s10_verifier),
-            s1_verifier: Box::new(s11_verifier),
-        };
-
         // 18. Combine the OR proofs or0 and or1 into an AND proof and
         let and_prover = AndProver {
             s0_prover: Box::new(or0_prover),
@@ -226,7 +195,6 @@ impl AMFSPoK {
             s2_prover: Box::new(or2_prover),
             s3_prover: Box::new(or3_prover),
             s4_prover: Box::new(or4_prover),
-            s5_prover: Box::new(or5_prover),
         };
         let and_verifier = AndVerifier {
             s0_verifier: Box::new(or0_verifier),
@@ -234,7 +202,6 @@ impl AMFSPoK {
             s2_verifier: Box::new(or2_verifier),
             s3_verifier: Box::new(or3_verifier),
             s4_verifier: Box::new(or4_verifier),
-            s5_verifier: Box::new(or5_verifier),
         };
 
         // 7. Finally, create a Fiat-Shamir Signature Scheme from the AND proof and

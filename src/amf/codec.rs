@@ -217,16 +217,11 @@ pub struct SerializableAMFInternalSignature {
         SerializableChaumPedersenProverCommitment,
         SerializableRistrettoPoint,
     ),
-    or_prover_commitment_5: (
-        SerializableChaumPedersenProverCommitment,
-        SerializableRistrettoPoint,
-    ),
     or_prover_response_0: SerializableOrProverResponse,
     or_prover_response_1: SerializableOrProverResponse,
     or_prover_response_2: SerializableOrProverResponse,
     or_prover_response_3: SerializableOrProverResponse,
     or_prover_response_4: SerializableOrProverResponse,
-    or_prover_response_5: SerializableOrProverResponse,
 }
 impl From<AMFInternalSignature> for SerializableAMFInternalSignature {
     fn from(signature: AMFInternalSignature) -> Self {
@@ -251,16 +246,11 @@ impl From<AMFInternalSignature> for SerializableAMFInternalSignature {
                 signature.prover_commitment.4 .0.into(),
                 signature.prover_commitment.4 .1.into(),
             ),
-            or_prover_commitment_5: (
-                signature.prover_commitment.5 .0.into(),
-                signature.prover_commitment.5 .1.into(),
-            ),
             or_prover_response_0: signature.prover_response.0.into(),
             or_prover_response_1: signature.prover_response.1.into(),
             or_prover_response_2: signature.prover_response.2.into(),
             or_prover_response_3: signature.prover_response.3.into(),
             or_prover_response_4: signature.prover_response.4.into(),
-            or_prover_response_5: signature.prover_response.5.into(),
         }
     }
 }
@@ -288,10 +278,6 @@ impl From<SerializableAMFInternalSignature> for AMFInternalSignature {
                     serialized_signature.or_prover_commitment_4.0.into(),
                     serialized_signature.or_prover_commitment_4.1.into(),
                 ),
-                (
-                    serialized_signature.or_prover_commitment_5.0.into(),
-                    serialized_signature.or_prover_commitment_5.1.into(),
-                ),
             ),
             prover_response: (
                 serialized_signature.or_prover_response_0.into(),
@@ -299,7 +285,6 @@ impl From<SerializableAMFInternalSignature> for AMFInternalSignature {
                 serialized_signature.or_prover_response_2.into(),
                 serialized_signature.or_prover_response_3.into(),
                 serialized_signature.or_prover_response_4.into(),
-                serialized_signature.or_prover_response_5.into(),
             ),
         }
     }

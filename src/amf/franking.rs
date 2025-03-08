@@ -48,10 +48,8 @@ pub(crate) type AMFInternalSignature = FiatShamirSignature<
         OrProverCommitment<RistrettoPoint, RistrettoPoint>,
         OrProverCommitment<ChaumPedersenProverCommitment, RistrettoPoint>,
         OrProverCommitment<ChaumPedersenProverCommitment, RistrettoPoint>,
-        OrProverCommitment<ChaumPedersenProverCommitment, RistrettoPoint>,
     ),
     (
-        OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
         OrProverResponse<Scalar, Scalar>,
@@ -152,11 +150,6 @@ pub fn frank(
                 OrWitness {
                     b: false,
                     s0_witness: Some(epsilon),
-                    s1_witness: None,
-                },
-                OrWitness {
-                    b: false,
-                    s0_witness: Some(alpha),
                     s1_witness: None,
                 },
             ),
@@ -308,11 +301,6 @@ pub fn forge(
                     s0_witness: None,
                     s1_witness: Some(gamma),
                 },
-                OrWitness {
-                    b: true,
-                    s0_witness: None,
-                    s1_witness: Some(eta),
-                },
             ),
         },
         message,
@@ -386,11 +374,6 @@ pub fn r_forge(
                     s0_witness: None,
                     s1_witness: Some(gamma),
                 },
-                OrWitness {
-                    b: true,
-                    s0_witness: None,
-                    s1_witness: Some(eta),
-                },
             ),
         },
         message,
@@ -406,7 +389,7 @@ pub fn r_forge(
     }
 }
 
-pub fn m_forge(
+pub fn sp_forge(
     sender_public_key: AMFPublicKey,
     _recipient_public_key: AMFPublicKey,
     sp_secret_key: AMFSecretKey,
@@ -463,11 +446,6 @@ pub fn m_forge(
                     b: false,
                     s0_witness: Some(epsilon),
                     s1_witness: None,
-                },
-                OrWitness {
-                    b: true,
-                    s0_witness: None,
-                    s1_witness: Some(epsilon * sp_secret_key.secret_key),
                 },
             ),
         },
@@ -541,11 +519,6 @@ pub fn rp_forge(
                     b: true,
                     s0_witness: None,
                     s1_witness: Some(alpha * rp_secret_key.secret_key),
-                },
-                OrWitness {
-                    b: true,
-                    s0_witness: None,
-                    s1_witness: Some(eta),
                 },
             ),
         },
@@ -621,11 +594,6 @@ pub fn rp_r_forge(
                     s0_witness: None,
                     s1_witness: Some(alpha * rp_secret_key.secret_key),
                 },
-                OrWitness {
-                    b: true,
-                    s0_witness: None,
-                    s1_witness: Some(eta),
-                },
             ),
         },
         message,
@@ -700,11 +668,6 @@ pub fn sp_r_forge(
                     s0_witness: None,
                     s1_witness: Some(gamma),
                 },
-                OrWitness {
-                    b: true,
-                    s0_witness: None,
-                    s1_witness: Some(epsilon * sp_secret_key.secret_key),
-                },
             ),
         },
         message,
@@ -777,11 +740,6 @@ pub fn rp_sp_forge(
                 OrWitness {
                     b: false,
                     s0_witness: Some(epsilon),
-                    s1_witness: None,
-                },
-                OrWitness {
-                    b: false,
-                    s0_witness: Some(alpha),
                     s1_witness: None,
                 },
             ),
@@ -1079,7 +1037,7 @@ mod tests {
         let message = b"hello world!";
 
         // Forge an AMF signature for "judge compromise deniability"
-        let amf_signature = m_forge(
+        let amf_signature = sp_forge(
             sender_public_key,
             recipient_public_key,
             sp_secret_key,
