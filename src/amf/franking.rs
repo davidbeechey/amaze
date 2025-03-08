@@ -70,17 +70,13 @@ pub struct AMFSignature {
     pub E_SP: RistrettoPoint,
 }
 
-fn generate_greek_letters() -> (Scalar, Scalar, Scalar, Scalar, Scalar, Scalar) {
-    let mut rng = rand::thread_rng();
-
-    let alpha = Scalar::random(&mut rng);
-    let beta = Scalar::random(&mut rng);
-    let epsilon = Scalar::random(&mut rng);
-    let gamma = Scalar::random(&mut rng);
-    let delta = Scalar::random(&mut rng);
-    let eta = Scalar::random(&mut rng);
-
-    (alpha, beta, epsilon, gamma, delta, eta)
+macro_rules! sample {
+    ($($x:ident),*) => {
+        let mut rng = rand::thread_rng();
+        $(
+            let $x = Scalar::random(&mut rng);
+        )*
+    };
 }
 
 pub fn keygen(role: AMFRole) -> (AMFPublicKey, AMFSecretKey) {
@@ -105,7 +101,7 @@ pub fn frank(
 ) -> AMFSignature {
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let (alpha, beta, epsilon, _, _, _) = generate_greek_letters();
+    sample!(alpha, beta, epsilon);
 
     let RP = alpha * rp_public_key.public_key;
     let R = beta * recipient_public_key.public_key;
@@ -254,7 +250,7 @@ pub fn forge(
 ) -> AMFSignature {
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let (alpha, beta, epsilon, gamma, delta, eta) = generate_greek_letters();
+    sample!(alpha, beta, epsilon, gamma, delta, eta);
 
     let RP = gamma * g;
     let R = delta * g;
@@ -325,7 +321,7 @@ pub fn r_forge(
 ) -> AMFSignature {
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let (alpha, beta, epsilon, gamma, _, eta) = generate_greek_letters();
+    sample!(alpha, beta, epsilon, gamma, eta);
 
     let recipient_public_key = recipient_secret_key.secret_key * g;
 
@@ -398,7 +394,7 @@ pub fn sp_forge(
 ) -> AMFSignature {
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let (alpha, beta, epsilon, gamma, delta, _) = generate_greek_letters();
+    sample!(alpha, beta, epsilon, gamma, delta);
 
     let sp_public_key = sp_secret_key.secret_key * g;
 
@@ -471,7 +467,7 @@ pub fn rp_forge(
 ) -> AMFSignature {
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let (alpha, beta, epsilon, _, delta, eta) = generate_greek_letters();
+    sample!(alpha, beta, epsilon, delta, eta);
 
     let rp_public_key = rp_secret_key.secret_key * g;
 
@@ -544,7 +540,7 @@ pub fn rp_r_forge(
 ) -> AMFSignature {
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let (alpha, beta, epsilon, _, _, eta) = generate_greek_letters();
+    sample!(alpha, beta, epsilon, eta);
 
     let rp_public_key = rp_secret_key.secret_key * g;
     let recipient_public_key = recipient_secret_key.secret_key * g;
@@ -618,7 +614,7 @@ pub fn sp_r_forge(
 ) -> AMFSignature {
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let (alpha, beta, epsilon, gamma, _, _) = generate_greek_letters();
+    sample!(alpha, beta, epsilon, gamma);
 
     let sp_public_key = sp_secret_key.secret_key * g;
     let recipient_public_key = recipient_secret_key.secret_key * g;
@@ -692,7 +688,7 @@ pub fn rp_sp_forge(
 ) -> AMFSignature {
     let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
 
-    let (alpha, beta, epsilon, _, _, _) = generate_greek_letters();
+    sample!(alpha, beta, epsilon);
 
     let rp_public_key = rp_secret_key.secret_key * g;
     let sp_public_key = sp_secret_key.secret_key * g;
@@ -1261,20 +1257,8 @@ mod tests {
         );
         assert!(verification_result);
 
-        // The forged signature should be judged by the judge
-        let judging_result_m = sp_judge(
-            sp_secret_key,
-            sender_public_key,
-            recipient_public_key,
-            rp_public_key,
-            sp_public_key,
-            message,
-            amf_signature,
-        );
-        assert!(judging_result_m);
-
         // The forged signature should not be judged by the other judge
-        let judging_result_j = rp_judge(
+        let rp_judging_result = rp_judge(
             rp_secret_key,
             sender_public_key,
             recipient_public_key,
@@ -1283,7 +1267,19 @@ mod tests {
             message,
             amf_signature,
         );
-        assert!(judging_result_j);
+        assert!(rp_judging_result);
+
+        // The forged signature should be judged by the judge
+        let sp_judging_result = sp_judge(
+            sp_secret_key,
+            sender_public_key,
+            recipient_public_key,
+            rp_public_key,
+            sp_public_key,
+            message,
+            amf_signature,
+        );
+        assert!(sp_judging_result);
 
         // The forged signature should look valid
         let spok = AMFSPoK::new(
