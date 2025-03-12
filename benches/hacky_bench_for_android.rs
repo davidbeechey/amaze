@@ -3,7 +3,7 @@
 
 #[cfg(target_os = "android")]
 use amaze::amf::{
-    franking::{frank, judge, keygen, verify},
+    franking::{frank, keygen, rp_judge, verify},
     AMFRole,
 };
 #[cfg(target_os = "android")]
