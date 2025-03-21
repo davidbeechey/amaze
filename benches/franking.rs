@@ -3,7 +3,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("new_amf");
-    group.significance_level(0.1).sample_size(1000);
+    group.significance_level(0.1).sample_size(10_000);
 
     // 0. Initialize a Sender
     let (sender_public_key, sender_secret_key) = keygen(AMFRole::Sender);
@@ -14,10 +14,10 @@ fn criterion_benchmark(c: &mut Criterion) {
     // 3. Initialize a Recipient Platform's Judge
     let (sp_public_key, sp_secret_key) = keygen(AMFRole::SenderPlatformJudge);
 
-    // 3. Initialize a message
+    // 4. Initialize a message
     let message = b"hello world!";
 
-    // 4. Frank the message
+    // 5. Frank the message
     let amf_signature = frank(
         sender_secret_key,
         sender_public_key,
