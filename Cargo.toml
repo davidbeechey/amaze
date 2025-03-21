@@ -18,11 +18,7 @@ name = "franking"
 harness = false
 
 [[bench]]
-name = "two_franking"
-harness = false
-
-[[bench]]
-name = "hacky_bench_for_android"
+name = "two_signature"
 harness = false
 
 [profile.release]

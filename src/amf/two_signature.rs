@@ -57,7 +57,7 @@ pub fn two_verify(
 
 #[cfg(test)]
 mod tests {
-    use crate::amf::two_franking::{judge, keygen, two_frank, two_verify, AMFRole};
+    use crate::amf::two_signature::{judge, keygen, two_frank, two_verify, AMFRole};
 
     #[test]
     fn test_franking() {
