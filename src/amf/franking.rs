@@ -82,7 +82,7 @@ macro_rules! sample {
 pub fn keygen(role: AMFRole) -> (AMFPublicKey, AMFSecretKey) {
     // cf. Fig. 5 in [AMF]
     let mut rng = rand::thread_rng();
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
     let secret_key = Scalar::random(&mut rng);
     let public_key = secret_key * g;
     (
@@ -99,7 +99,7 @@ pub fn frank(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
 
     sample!(alpha, beta, epsilon);
 
@@ -248,7 +248,7 @@ pub fn forge(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
 
     sample!(alpha, beta, epsilon, gamma, delta, eta);
 
@@ -319,7 +319,7 @@ pub fn r_forge(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
 
     sample!(alpha, beta, epsilon, gamma, eta);
 
@@ -392,7 +392,7 @@ pub fn sp_forge(
     rp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
 
     sample!(alpha, beta, epsilon, gamma, delta);
 
@@ -465,7 +465,7 @@ pub fn rp_forge(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
 
     sample!(alpha, beta, epsilon, delta, eta);
 
@@ -538,7 +538,7 @@ pub fn rp_r_forge(
     sp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
 
     sample!(alpha, beta, epsilon, eta);
 
@@ -612,7 +612,7 @@ pub fn sp_r_forge(
     rp_public_key: AMFPublicKey,
     message: &[u8],
 ) -> AMFSignature {
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
 
     sample!(alpha, beta, epsilon, gamma);
 
@@ -686,7 +686,7 @@ pub fn rp_sp_forge(
     sp_secret_key: AMFSecretKey,
     message: &[u8],
 ) -> AMFSignature {
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
 
     sample!(alpha, beta, epsilon);
 
