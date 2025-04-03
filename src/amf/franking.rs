@@ -1,4 +1,4 @@
-//! AMF Franking Algorithms (KeyGen, Frank, Verify, Judge)
+//! AMF Franking Algorithms (KeyGen, Frank, Verify, Judge, Forge, RForge, JForge)
 //!
 //! Cf. Fig. 5 in [AMF]
 //!
