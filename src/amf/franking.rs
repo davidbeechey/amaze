@@ -1,4 +1,4 @@
-//! AMF Franking Algorithms (KeyGen, Frank, Verify, Judge)
+//! AMF Franking Algorithms (KeyGen, Frank, Verify, Judge, Forge, RForge, JForge)
 //!
 //! Cf. Fig. 5 in [AMF]
 //!
@@ -64,7 +64,7 @@ pub struct AMFSignature {
 pub fn keygen(role: AMFRole) -> (AMFPublicKey, AMFSecretKey) {
     // cf. Fig. 5 in [AMF]
     let mut rng = rand::thread_rng();
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
     let secret_key = Scalar::random(&mut rng);
     let public_key = secret_key * g;
     (
@@ -81,7 +81,7 @@ pub fn frank(
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
     let alpha = Scalar::random(&mut rng);
     let beta = Scalar::random(&mut rng);
@@ -169,7 +169,7 @@ pub fn forge(
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
     let alpha = Scalar::random(&mut rng);
     let beta = Scalar::random(&mut rng);
@@ -215,7 +215,7 @@ pub fn r_forge(
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
     let alpha = Scalar::random(&mut rng);
     let beta = Scalar::random(&mut rng);
@@ -262,7 +262,7 @@ pub fn j_forge(
     message: &[u8],
 ) -> AMFSignature {
     let mut rng = rand::thread_rng();
-    let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+    let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
     // cf. Fig. 5 in [AMF]
     let alpha = Scalar::random(&mut rng);
     let beta = Scalar::random(&mut rng);

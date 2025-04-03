@@ -28,6 +28,7 @@ pub fn two_frank(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn two_verify(
     recipient_secret_key: AMFSecretKey,
     sender_public_key: AMFPublicKey,
@@ -65,7 +66,7 @@ mod tests {
         let (sender_public_key, sender_secret_key) = keygen(AMFRole::Sender);
         // 1. Initialize a Recipient
         let (recipient_public_key, recipient_secret_key) = keygen(AMFRole::Recipient);
-        // 2. Initialize a Judge
+        // 2. Initialize the judges RP and SP
         let (rp_public_key, rp_secret_key) = keygen(AMFRole::Judge);
         let (sp_public_key, sp_secret_key) = keygen(AMFRole::Judge);
 
@@ -104,8 +105,6 @@ mod tests {
             message,
             amf_signature,
         );
-        assert!(rp_judge_result);
-
         let sp_judge_result = judge(
             sp_secret_key,
             sender_public_key,
@@ -114,6 +113,7 @@ mod tests {
             message,
             amf_signature_2,
         );
+        assert!(rp_judge_result);
         assert!(sp_judge_result);
     }
 }
