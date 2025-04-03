@@ -73,7 +73,7 @@ impl<Witness, WitnessStatement, PerVerifierSecret>
     GenericSigmaProver<Witness, WitnessStatement, PerVerifierSecret>
 {
     pub fn new(witness_statement: WitnessStatement) -> Self {
-        let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+        let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
         Self {
             g,
             witness: None,
@@ -85,7 +85,7 @@ impl<Witness, WitnessStatement, PerVerifierSecret>
 
 impl<WitnessStatement> GenericSigmaVerifier<WitnessStatement> {
     pub fn new(witness_statement: WitnessStatement) -> Self {
-        let g = RistrettoBasepointTable::basepoint(&RISTRETTO_BASEPOINT_TABLE);
+        let g = RistrettoBasepointTable::basepoint(RISTRETTO_BASEPOINT_TABLE);
         Self {
             g,
             witness_statement,
