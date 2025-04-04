@@ -18,6 +18,10 @@ name = "franking"
 harness = false
 
 [[bench]]
+name = "hacky_bench_for_android"
+harness = false
+
+[[bench]]
 name = "two_signature"
 harness = false
 
