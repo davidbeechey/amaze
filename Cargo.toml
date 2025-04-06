@@ -17,6 +17,10 @@ bincode = "1.3.3"
 name = "franking"
 harness = false
 
+[[bench]]
+name = "hacky_bench_for_android"
+harness = false
+
 [profile.release]
 lto = true
 
