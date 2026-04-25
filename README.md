@@ -1,3 +1,5 @@
+# Interoperability
+
 # `amaze`: faster asymmetric message franking
 
 [![Rust](https://github.com/sgmenda/amaze/actions/workflows/rust.yml/badge.svg)](https://github.com/sgmenda/amaze/actions/workflows/rust.yml)
